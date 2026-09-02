@@ -1,0 +1,87 @@
+[
+  {
+    "_id": "siteSettings",
+    "_type": "siteSettings",
+    "agencyName": "ExoticHK",
+    "agencyDescription": {
+      "en": "A small directory of verified companions in Hong Kong. Contact a manager on Telegram or WhatsApp.",
+      "zhHantHK": "香港核實伴侶目錄。透過 Telegram 或 WhatsApp 聯絡客戶經理。"
+    },
+    "defaultSeoTitle": {
+      "en": "ExoticHK — companion directory",
+      "zhHantHK": "ExoticHK — 伴侶目錄"
+    },
+    "defaultSeoDescription": {
+      "en": "Browse companion profiles by district in Hong Kong. Message a manager directly.",
+      "zhHantHK": "按地區瀏覽香港伴侶檔案，直接聯絡客戶經理。"
+    },
+    "telegramUrl": "https://t.me/exotichk",
+    "whatsappUrl": "https://wa.me/85200000000"
+  },
+  {
+    "_id": "country-hong-kong",
+    "_type": "country",
+    "internalName": "Hong Kong",
+    "slug": { "_type": "slug", "current": "hong-kong" },
+    "title": { "en": "Hong Kong", "zhHantHK": "香港" },
+    "intro": {
+      "en": "Companions based in Hong Kong, listed by district. Contact is through the agency manager — not a booking form.",
+      "zhHantHK": "駐香港的伴侶，按地區列出。聯絡方式為客戶經理，而非線上預訂。"
+    },
+    "body": {
+      "en": "Hong Kong is the first destination on this directory. Open a district or a profile, then message the manager on Telegram or WhatsApp.",
+      "zhHantHK": "香港是本目錄的第一個目的地。開啟地區或個人檔案後，透過 Telegram 或 WhatsApp 聯絡客戶經理。"
+    },
+    "status": "active",
+    "sortOrder": 0
+  },
+  {
+    "_id": "district-central",
+    "_type": "district",
+    "internalName": "Central",
+    "country": { "_type": "reference", "_ref": "country-hong-kong" },
+    "slug": { "_type": "slug", "current": "central" },
+    "title": { "en": "Central", "zhHantHK": "中環" },
+    "intro": {
+      "en": "Profiles currently associated with Central. A profile URL does not change if she later moves district.",
+      "zhHantHK": "目前與中環相關的檔案。即使之後改區，個人檔案網址也不會改變。"
+    },
+    "status": "active",
+    "sortOrder": 0
+  },
+  {
+    "_id": "district-wan-chai",
+    "_type": "district",
+    "internalName": "Wan Chai",
+    "country": { "_type": "reference", "_ref": "country-hong-kong" },
+    "slug": { "_type": "slug", "current": "wan-chai" },
+    "title": { "en": "Wan Chai", "zhHantHK": "灣仔" },
+    "intro": {
+      "en": "Profiles currently associated with Wan Chai.",
+      "zhHantHK": "目前與灣仔相關的檔案。"
+    },
+    "status": "active",
+    "sortOrder": 1
+  },
+  {
+    "_id": "profile-anna",
+    "_type": "profile",
+    "internalName": "Anna (seed)",
+    "country": { "_type": "reference", "_ref": "country-hong-kong" },
+    "district": { "_type": "reference", "_ref": "district-central" },
+    "slug": { "_type": "slug", "current": "anna" },
+    "status": "active",
+    "displayName": "Anna",
+    "summary": {
+      "en": "Test profile for the Hong Kong catalog. Message the manager to enquire.",
+      "zhHantHK": "香港目錄的測試檔案。查詢請聯絡客戶經理。"
+    },
+    "body": {
+      "en": "This is seed content so the country, district and profile routes can be opened before real profiles are added in Studio.",
+      "zhHantHK": "這是種子內容，讓國家、地區和個人檔案頁面在 Studio 加入真實檔案之前就能開啟。"
+    },
+    "attributes": ["Central"],
+    "publishedAt": "2026-09-02T00:00:00.000Z",
+    "sortOrder": 0
+  }
+]

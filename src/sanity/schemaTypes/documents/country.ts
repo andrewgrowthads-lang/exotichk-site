@@ -1,5 +1,5 @@
 import { defineField, defineType } from "sanity";
-import { RESERVED_SEGMENTS } from "@/lib/urls";
+import { RESERVED_SEGMENTS } from "@/lib/slugs";
 import { uniqueSlug } from "@/sanity/schemaTypes/validators/uniqueSlug";
 
 export const country = defineType({

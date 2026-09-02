@@ -1,7 +1,7 @@
-import imageUrlBuilder, { type SanityImageSource } from "@sanity/image-url";
+import { createImageUrlBuilder, type SanityImageSource } from "@sanity/image-url";
 import { sanityClient } from "@/sanity/client";
 
-const builder = imageUrlBuilder(sanityClient);
+const builder = createImageUrlBuilder(sanityClient);
 
 /** Base Sanity CDN URL for an image asset, with auto-format enabled. */
 export function urlFor(source: SanityImageSource) {

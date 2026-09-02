@@ -31,6 +31,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   trailingSlash: true,
+  agentRules: false,
   images: {
     // Sanity's own CDN already resizes and re-encodes these assets;
     // routing them through Vercel's optimizer too would add a hop, a

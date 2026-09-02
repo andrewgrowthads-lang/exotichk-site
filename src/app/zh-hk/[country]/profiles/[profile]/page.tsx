@@ -69,7 +69,7 @@ export default async function ProfilePage({ params }: { params: Promise<Params> 
 
       <div className="mt-4 grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="grid grid-cols-2 gap-2">
-          {profile.images.map((image, index) => (
+          {(profile.images ?? []).map((image, index) => (
             <div key={index} className={index === 0 ? "col-span-2 aspect-[4/3] overflow-hidden rounded-xl" : "aspect-square overflow-hidden rounded-xl"}>
               <SanityImg
                 image={image}

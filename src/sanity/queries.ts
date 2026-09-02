@@ -68,7 +68,7 @@ const profileSummaryProjection = `{
   status,
   displayName,
   summary ${localizedTextProjection},
-  images[] ${imageProjection},
+  "images": coalesce(images, [])[] ${imageProjection},
   sortOrder,
   "updatedAt": _updatedAt,
   "country": country->{ "slug": slug.current },

@@ -1,5 +1,5 @@
 import { defineField, defineType } from "sanity";
-import { RESERVED_SEGMENTS } from "@/lib/urls";
+import { RESERVED_SEGMENTS } from "@/lib/slugs";
 import { uniqueSlugWithinCountry } from "@/sanity/schemaTypes/validators/uniqueSlugWithinCountry";
 
 export const district = defineType({

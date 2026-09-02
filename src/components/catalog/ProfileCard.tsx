@@ -23,7 +23,7 @@ export function ProfileCard({
     >
       <div className="aspect-[3/4] overflow-hidden bg-neutral-100 dark:bg-neutral-900">
         <SanityImg
-          image={profile.images[0]}
+          image={profile.images?.[0]}
           locale={locale}
           fallbackAlt={profile.displayName}
           sizes="(min-width: 768px) 25vw, 50vw"

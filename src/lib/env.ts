@@ -12,8 +12,16 @@ function required(name: string, value: string | undefined): string {
   return value;
 }
 
+function resolveSiteUrl(): string {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  if (explicit) return explicit;
+  const vercelHost = process.env.VERCEL_URL?.replace(/\/$/, "");
+  if (vercelHost) return `https://${vercelHost}`;
+  throw new Error("Missing required environment variable: NEXT_PUBLIC_SITE_URL");
+}
+
 export const env = {
-  siteUrl: required("NEXT_PUBLIC_SITE_URL", process.env.NEXT_PUBLIC_SITE_URL),
+  siteUrl: resolveSiteUrl(),
   sanityProjectId: required(
     "NEXT_PUBLIC_SANITY_PROJECT_ID",
     process.env.NEXT_PUBLIC_SANITY_PROJECT_ID,
