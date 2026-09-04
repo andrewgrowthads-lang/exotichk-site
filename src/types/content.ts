@@ -77,6 +77,9 @@ export interface ProfileSummary {
   updatedAt: string;
   country: { slug: string };
   district: { slug: string; title: LocalizedText };
+  age?: number;
+  height?: number;
+  nationality?: string;
 }
 
 /** Minimal profile shape used by sitemap and static-param generation. */

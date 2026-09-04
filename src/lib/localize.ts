@@ -42,6 +42,7 @@ const NATIONALITY_TRANSLATIONS_ZH: Record<string, string> = {
   Korean: "韓國",
   Japanese: "日本",
   Russian: "俄羅斯",
+  Russia: "俄羅斯",
   Ukrainian: "烏克蘭",
 };
 

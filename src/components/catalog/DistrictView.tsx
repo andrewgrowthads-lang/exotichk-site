@@ -1,9 +1,9 @@
 import type { LocaleId } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { pickLocalizedText } from "@/lib/localize";
+import { CatalogHero } from "@/components/catalog/CatalogHero";
 import { DistrictChips } from "@/components/catalog/DistrictChips";
 import { ProfileGrid } from "@/components/catalog/ProfileGrid";
-import { Breadcrumbs } from "@/components/catalog/Breadcrumbs";
 import { PageShell } from "@/components/layout/PageShell";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
 import { absoluteUrl, countryPath, districtPath, homePath } from "@/lib/urls";
@@ -39,9 +39,13 @@ export function DistrictView({
       <JsonLd
         data={breadcrumbJsonLd(breadcrumbs.map((item) => ({ name: item.label, url: absoluteUrl(item.href) })))}
       />
-      <Breadcrumbs items={breadcrumbs} />
-      <h1 className="text-[20px] font-medium tracking-tight">{districtTitle}</h1>
-      <div className="mt-2">
+      <CatalogHero
+        title={districtTitle}
+        subtitle={countryTitle}
+        image={district.image ?? country.image}
+        locale={locale}
+      />
+      <div className="mt-4">
         <DistrictChips
           countrySlug={country.slug}
           districts={districts}
@@ -51,7 +55,7 @@ export function DistrictView({
           allHref={countryPath(country.slug, locale)}
         />
       </div>
-      <div className="mt-3">
+      <div className="mt-4">
         <ProfileGrid profiles={profiles} locale={locale} dictionary={dictionary} hideDistrict priorityFirst />
       </div>
       <p className="mt-10 max-w-xl text-[13px] leading-relaxed text-[var(--muted)]">

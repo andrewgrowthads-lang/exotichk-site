@@ -7,6 +7,8 @@ const dictionary = {
     profiles: "Profiles",
     all: "All",
     breadcrumbHome: "Home",
+    tagline: "Private companions",
+    adultsOnly: "18+",
   },
   contact: {
     telegram: "Telegram",
@@ -22,6 +24,10 @@ const dictionary = {
     contactAnyway: "Contact the manager",
     similar: "More profiles",
     speaks: "Speaks",
+    backToList: "Back to list",
+    age: "Age",
+    height: "Height",
+    nationality: "Nationality",
   },
   gallery: {
     openPhoto: "Open photo",

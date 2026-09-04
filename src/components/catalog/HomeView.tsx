@@ -1,6 +1,7 @@
 import type { LocaleId } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { pickLocalizedText } from "@/lib/localize";
+import { CatalogHero } from "@/components/catalog/CatalogHero";
 import { DistrictChips } from "@/components/catalog/DistrictChips";
 import { ProfileGrid } from "@/components/catalog/ProfileGrid";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/components/seo/JsonLd";
@@ -30,6 +31,7 @@ export function HomeView({
   agencyDescription?: string;
 }) {
   const siteName = agencyName || dictionary.common.siteName;
+  const countryTitle = pickLocalizedText(country.title, locale);
 
   return (
     <PageShell
@@ -54,14 +56,23 @@ export function HomeView({
         })}
       />
       <h1 className="sr-only">{siteName}</h1>
-      <DistrictChips
-        countrySlug={country.slug}
-        districts={districts}
+      <CatalogHero
+        title={countryTitle}
+        subtitle={dictionary.common.tagline}
+        image={country.image}
         locale={locale}
-        dictionary={dictionary}
-        allHref={homePath(locale)}
+        titleAs="p"
       />
-      <div className="mt-3">
+      <div className="mt-4">
+        <DistrictChips
+          countrySlug={country.slug}
+          districts={districts}
+          locale={locale}
+          dictionary={dictionary}
+          allHref={homePath(locale)}
+        />
+      </div>
+      <div className="mt-4">
         <ProfileGrid profiles={profiles} locale={locale} dictionary={dictionary} priorityFirst />
       </div>
       {pickLocalizedText(country.intro, locale) && (

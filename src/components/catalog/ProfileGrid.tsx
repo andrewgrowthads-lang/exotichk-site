@@ -28,7 +28,7 @@ export function ProfileGrid({
   // heading to suppress as well.
   if (profiles.length === 0) {
     return (
-      <div className="rounded-lg bg-[var(--surface)] px-4 py-8 text-center">
+      <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-10 text-center">
         <p className="text-[14px] text-[var(--foreground)]">{dictionary.listing.empty}</p>
         <p className="mt-1 text-[13px] text-[var(--muted)]">{dictionary.listing.emptyHint}</p>
       </div>

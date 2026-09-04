@@ -52,7 +52,7 @@ export function ProfileGallery({
   }, [openIndex]);
 
   return (
-    <>
+    <div>
       <div className="hide-scrollbar -mx-3 flex snap-x snap-mandatory overflow-x-auto sm:mx-0 md:overflow-visible">
         {photos.map((photo, index) => (
           <button
@@ -60,7 +60,7 @@ export function ProfileGallery({
             type="button"
             onClick={() => setOpenIndex(index)}
             aria-label={`${dictionary.gallery.openPhoto} ${index + 1}/${photos.length}`}
-            className={`block w-[min(100%,100vw)] shrink-0 snap-center overflow-hidden bg-[#ddd8d0] md:w-full ${
+            className={`block w-[min(100%,100vw)] shrink-0 snap-center overflow-hidden bg-[var(--photo-fallback)] md:w-full md:rounded-xl md:border md:border-white/10 ${
               index > 0 ? "md:hidden" : ""
             }`}
           >
@@ -70,7 +70,7 @@ export function ProfileGallery({
                 locale={locale}
                 fallbackAlt={displayName}
                 priority={index === 0}
-                sizes={index === 0 ? "(min-width: 768px) 70vw, 100vw" : "(min-width: 768px) 35vw, 100vw"}
+                sizes={index === 0 ? "(min-width: 768px) 45vw, 100vw" : "(min-width: 768px) 35vw, 100vw"}
                 className="h-full w-full object-cover"
               />
             </div>
@@ -83,8 +83,30 @@ export function ProfileGallery({
           {photos.map((photo, index) => (
             <span
               key={`dot-${photo.asset?._ref ?? index}`}
-              className={`h-1.5 w-1.5 rounded-full ${index === 0 ? "bg-[var(--foreground)]" : "bg-[var(--line)]"}`}
+              className={`h-1.5 w-1.5 rounded-full ${index === 0 ? "bg-[var(--accent)]" : "bg-[var(--line)]"}`}
             />
+          ))}
+        </div>
+      )}
+
+      {photos.length > 1 && (
+        <div className="mt-2 hidden grid-cols-4 gap-2 md:grid">
+          {photos.slice(0, 4).map((photo, index) => (
+            <button
+              key={`thumb-${photo.asset?._ref ?? index}`}
+              type="button"
+              onClick={() => setOpenIndex(index)}
+              aria-label={`${dictionary.gallery.openPhoto} ${index + 1}/${photos.length}`}
+              className="relative aspect-square overflow-hidden rounded-lg bg-[var(--photo-fallback)] ring-1 ring-white/10"
+            >
+              <CatalogPhoto
+                photo={photo}
+                locale={locale}
+                fallbackAlt={displayName}
+                sizes="10vw"
+                className="h-full w-full object-cover"
+              />
+            </button>
           ))}
         </div>
       )}
@@ -118,6 +140,6 @@ export function ProfileGallery({
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

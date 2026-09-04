@@ -22,8 +22,10 @@ export function DistrictChips({
 }) {
   const allActive = !active;
   const chip = (isActive: boolean) =>
-    `flex shrink-0 items-center rounded-full px-4 text-[13px] min-h-11 ${
-      isActive ? "bg-[var(--foreground)] text-[var(--surface)]" : "bg-[var(--surface)] text-[var(--foreground)]"
+    `flex shrink-0 items-center rounded-md px-3.5 text-[12px] font-medium tracking-[0.08em] min-h-10 transition-colors ${
+      isActive
+        ? "bg-[var(--accent)] text-white"
+        : "border border-[var(--line)] bg-[var(--surface)] text-[var(--foreground)] hover:border-[var(--accent)]/60"
     }`;
 
   return (

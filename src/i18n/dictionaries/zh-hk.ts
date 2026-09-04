@@ -9,6 +9,8 @@ const dictionary: Dictionary = {
     profiles: "個人檔案",
     all: "全部",
     breadcrumbHome: "首頁",
+    tagline: "私人伴侶",
+    adultsOnly: "18+",
   },
   contact: {
     telegram: "Telegram",
@@ -24,6 +26,10 @@ const dictionary: Dictionary = {
     contactAnyway: "聯絡客戶經理",
     similar: "更多檔案",
     speaks: "語言",
+    backToList: "返回列表",
+    age: "年齡",
+    height: "身高",
+    nationality: "國籍",
   },
   gallery: {
     openPhoto: "開啟相片",

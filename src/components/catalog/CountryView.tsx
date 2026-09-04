@@ -1,9 +1,9 @@
 import type { LocaleId } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { pickLocalizedText } from "@/lib/localize";
+import { CatalogHero } from "@/components/catalog/CatalogHero";
 import { DistrictChips } from "@/components/catalog/DistrictChips";
 import { ProfileGrid } from "@/components/catalog/ProfileGrid";
-import { Breadcrumbs } from "@/components/catalog/Breadcrumbs";
 import { PageShell } from "@/components/layout/PageShell";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
 import { absoluteUrl, countryPath, homePath } from "@/lib/urls";
@@ -35,16 +35,12 @@ export function CountryView({
       <JsonLd
         data={breadcrumbJsonLd(breadcrumbs.map((item) => ({ name: item.label, url: absoluteUrl(item.href) })))}
       />
-      <Breadcrumbs items={breadcrumbs} />
-      <h1 className="text-[20px] font-medium tracking-tight">{countryTitle}</h1>
-      <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-[var(--muted)]">
-        {pickLocalizedText(country.intro, locale)}
-      </p>
-      {pickLocalizedText(country.body, locale) && (
-        <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-[var(--muted)]">
-          {pickLocalizedText(country.body, locale)}
-        </p>
-      )}
+      <CatalogHero
+        title={countryTitle}
+        subtitle={dictionary.common.tagline}
+        image={country.image}
+        locale={locale}
+      />
       <div className="mt-4">
         <DistrictChips
           countrySlug={country.slug}
@@ -54,9 +50,19 @@ export function CountryView({
           allHref={countryPath(country.slug, locale)}
         />
       </div>
-      <div className="mt-3">
+      <div className="mt-4">
         <ProfileGrid profiles={profiles} locale={locale} dictionary={dictionary} priorityFirst />
       </div>
+      {pickLocalizedText(country.intro, locale) && (
+        <p className="mt-10 max-w-xl text-[13px] leading-relaxed text-[var(--muted)]">
+          {pickLocalizedText(country.intro, locale)}
+        </p>
+      )}
+      {pickLocalizedText(country.body, locale) && (
+        <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-[var(--muted)]">
+          {pickLocalizedText(country.body, locale)}
+        </p>
+      )}
     </PageShell>
   );
 }

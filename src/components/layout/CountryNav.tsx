@@ -17,27 +17,26 @@ export async function CountryNav({
   if (countries.length === 0) return null;
 
   return (
-    <nav aria-label={dictionary.common.countries} className="flex items-center gap-1.5 text-[13px]">
-      {countries.map((country, index) => {
+    <nav
+      aria-label={dictionary.common.countries}
+      className="flex min-w-0 flex-1 items-center justify-center gap-1.5 overflow-x-auto hide-scrollbar"
+    >
+      {countries.map((country) => {
         const href = countryNavHref(country.slug, homeCountrySlug, locale);
         const current = country.slug === activeCountrySlug;
-        return (
-          <span key={country.slug} className="flex items-center gap-1.5">
-            {index > 0 && (
-              <span aria-hidden="true" className="text-[var(--line)]">
-                |
-              </span>
-            )}
-            {current ? (
-              <span aria-current="page" className="font-medium text-[var(--foreground)]">
-                {country.title}
-              </span>
-            ) : (
-              <Link href={href} className="text-[var(--muted)] hover:text-[var(--foreground)]">
-                {country.title}
-              </Link>
-            )}
+        const className = `shrink-0 rounded-md px-2.5 py-1 text-[11px] font-medium tracking-[0.12em] uppercase transition-colors ${
+          current
+            ? "bg-[var(--surface-2)] text-white ring-1 ring-[var(--accent)]/70"
+            : "text-[var(--muted)] hover:text-white"
+        }`;
+        return current ? (
+          <span key={country.slug} aria-current="page" className={className}>
+            {country.title}
           </span>
+        ) : (
+          <Link key={country.slug} href={href} className={className}>
+            {country.title}
+          </Link>
         );
       })}
     </nav>

@@ -29,7 +29,7 @@ export function CatalogPhoto({
   className?: string;
 }) {
   if (!photo?.asset) {
-    return <div className={`bg-[#ddd8d0] ${className ?? ""}`} />;
+    return <div className={`bg-[var(--photo-fallback)] ${className ?? ""}`} />;
   }
 
   const alt = pickLocalizedText(photo.alt, locale) || fallbackAlt;

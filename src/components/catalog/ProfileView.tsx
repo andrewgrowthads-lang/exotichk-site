@@ -5,15 +5,22 @@ import { absoluteUrl, countryPath, districtPath, homePath, profilePath } from "@
 import { hasDirectContact } from "@/lib/contact";
 import type { ProfileContext } from "@/lib/analytics";
 import { ProfileViewTracker } from "@/components/analytics/ProfileViewTracker";
-import { Breadcrumbs } from "@/components/catalog/Breadcrumbs";
 import { ProfileGallery } from "@/components/catalog/ProfileGallery";
 import { ProfileGrid } from "@/components/catalog/ProfileGrid";
 import { ContactButtons } from "@/components/contact/ContactButtons";
 import { PageShell } from "@/components/layout/PageShell";
-import { CatalogPhoto } from "@/components/media/CatalogPhoto";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
 import type { ContactLinks, CountryDetail, ProfileDetail, ProfileSummary } from "@/types/content";
 import Link from "next/link";
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 border-b border-[var(--line)] py-2.5 text-[14px]">
+      <span className="text-[var(--muted)]">{label}</span>
+      <span className="text-white">{value}</span>
+    </div>
+  );
+}
 
 export function ProfileView({
   locale,
@@ -33,21 +40,16 @@ export function ProfileView({
   alternateHref?: string;
 }) {
   const photos = profile.images ?? [];
-  const rest = photos.slice(1);
   const countryTitle = pickLocalizedText(country.title, locale);
   const districtTitle = pickLocalizedText(profile.district.title, locale);
   const h1 = pickLocalizedText(profile.h1Override, locale) || profile.displayName;
+  const listHref = districtPath(country.slug, profile.district.slug, locale);
   const breadcrumbs = [
     { label: dictionary.common.home, href: homePath(locale) },
     { label: countryTitle, href: countryPath(country.slug, locale) },
-    { label: districtTitle, href: districtPath(country.slug, profile.district.slug, locale) },
+    { label: districtTitle, href: listHref },
     { label: profile.displayName, href: profilePath(country.slug, profile.slug, locale) },
   ];
-  const stats = [
-    profile.age ? String(profile.age) : null,
-    profile.height ? `${profile.height} cm` : null,
-    profile.nationality ? localizeNationality(profile.nationality, locale) : null,
-  ].filter((value): value is string => Boolean(value));
   const languages = (profile.languages ?? []).map((value) => localizeLanguage(value, locale));
   const attributes = (profile.attributes ?? []).map((value) => localizeAttribute(value, locale));
   // No WhatsApp and no Telegram means the sticky bar would render as an
@@ -70,37 +72,52 @@ export function ProfileView({
         data={breadcrumbJsonLd(breadcrumbs.map((item) => ({ name: item.label, url: absoluteUrl(item.href) })))}
       />
       <div className={showStickyContact ? "pb-24 md:pb-0" : undefined}>
-      <div className="mx-auto max-w-lg md:max-w-none">
-        <Breadcrumbs items={breadcrumbs} />
+      <Link
+        href={listHref}
+        className="mb-4 inline-flex items-center gap-1.5 text-[13px] text-[var(--accent-soft)] hover:text-white"
+      >
+        <span aria-hidden="true">←</span>
+        {dictionary.profile.backToList}
+      </Link>
+
+      <div className="md:grid md:grid-cols-2 md:items-start md:gap-10 lg:gap-14">
         <ProfileGallery photos={photos} locale={locale} displayName={profile.displayName} dictionary={dictionary} />
 
-        <div className="mt-5 md:mx-auto md:max-w-lg">
-          <h1 className="text-[28px] leading-none font-medium tracking-tight">{h1}</h1>
+        <div className="mt-5 md:mt-0">
+          <h1 className="text-[32px] leading-none font-semibold tracking-tight text-white sm:text-[40px]">{h1}</h1>
+          <p className="mt-3 text-[14px] text-[var(--muted)]">
+            <Link href={countryPath(country.slug, locale)} className="text-[var(--accent-soft)] underline-offset-2 hover:underline">
+              {countryTitle}
+            </Link>
+            <span aria-hidden="true"> · </span>
+            <Link
+              href={districtPath(country.slug, profile.district.slug, locale)}
+              className="text-[var(--accent-soft)] underline-offset-2 hover:underline"
+            >
+              {districtTitle}
+            </Link>
+          </p>
           {profile.status === "temporarilyUnavailable" && (
-            <div className="mt-3 rounded-md bg-[var(--surface)] px-3 py-2 text-[13px] text-[var(--muted)]">
+            <div className="mt-3 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-[13px] text-[var(--muted)]">
               <p className="font-medium text-[var(--foreground)]">{dictionary.profile.unavailableBadge}</p>
               <p className="mt-0.5">
                 {pickLocalizedText(profile.unavailableMessage, locale) || dictionary.profile.contactAnyway}
               </p>
             </div>
           )}
-          <p className="mt-2 text-[14px] text-[var(--muted)]">
-            <Link href={countryPath(country.slug, locale)} className="underline-offset-2 hover:underline">
-              {countryTitle}
-            </Link>
-            <span aria-hidden="true"> · </span>
-            <Link
-              href={districtPath(country.slug, profile.district.slug, locale)}
-              className="underline-offset-2 hover:underline"
-            >
-              {districtTitle}
-            </Link>
-          </p>
-          {stats.length > 0 && (
-            <p className="mt-3 text-[14px] tabular-nums text-[var(--foreground)]">{stats.join(" · ")}</p>
+
+          {(profile.age || profile.height || profile.nationality) && (
+            <div className="mt-5">
+              {profile.age ? <Fact label={dictionary.profile.age} value={String(profile.age)} /> : null}
+              {profile.height ? <Fact label={dictionary.profile.height} value={`${profile.height} cm`} /> : null}
+              {profile.nationality ? (
+                <Fact label={dictionary.profile.nationality} value={localizeNationality(profile.nationality, locale)} />
+              ) : null}
+            </div>
           )}
+
           {languages.length > 0 && (
-            <p className="mt-1 text-[13px] text-[var(--muted)]">
+            <p className="mt-3 text-[13px] text-[var(--muted)]">
               {dictionary.profile.speaks} {languages.join(", ")}
             </p>
           )}
@@ -109,7 +126,7 @@ export function ProfileView({
               {attributes.map((value) => (
                 <span
                   key={value}
-                  className="rounded-full bg-[var(--surface)] px-2.5 py-1 text-[11px] text-[var(--muted)]"
+                  className="rounded-md border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-[11px] text-[var(--muted)]"
                 >
                   {value}
                 </span>
@@ -117,12 +134,12 @@ export function ProfileView({
             </div>
           )}
 
-          <div className="mt-5">
+          <div className="mt-6">
             <ContactButtons
               contact={contact}
               context={analyticsContext}
               labels={dictionary.contact}
-              layout="bar"
+              layout="stack"
               showChannel
             />
           </div>
@@ -134,34 +151,18 @@ export function ProfileView({
             <p className="mt-3 text-[15px] leading-relaxed text-[var(--muted)]">{pickLocalizedText(profile.body, locale)}</p>
           )}
         </div>
-
-        {rest.length > 0 && (
-          <div className="mt-8 hidden grid-cols-2 gap-2 md:grid">
-            {rest.map((photo, index) => (
-              <div key={`more-${photo.asset?._ref ?? index}`} className="relative aspect-[3/4] overflow-hidden bg-[#ddd8d0]">
-                <CatalogPhoto
-                  photo={photo}
-                  locale={locale}
-                  fallbackAlt={profile.displayName}
-                  sizes="(min-width: 768px) 35vw, 50vw"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {similar.length > 0 && (
         <section className="mt-12 md:mb-8">
-          <h2 className="mb-3 text-[16px] font-medium">{dictionary.profile.similar}</h2>
+          <h2 className="mb-4 text-[16px] font-medium text-white">{dictionary.profile.similar}</h2>
           <ProfileGrid profiles={similar} locale={locale} dictionary={dictionary} />
         </section>
       )}
       </div>
 
       {showStickyContact && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--line)] bg-[var(--background)]/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--accent)]/25 bg-[var(--background)]/92 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md md:hidden">
           <ContactButtons
             contact={contact}
             context={analyticsContext}

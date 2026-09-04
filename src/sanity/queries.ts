@@ -94,6 +94,9 @@ const profileSummaryProjection = `{
   "updatedAt": _updatedAt,
   "country": country->{ "slug": slug.current },
   "district": district->{ "slug": slug.current, title ${localizedTextProjection} },
+  age,
+  height,
+  nationality,
 }`;
 
 const profileDetailProjection = `{

@@ -24,25 +24,30 @@ function LanguageSwitcher({ locale, alternateHref }: { locale: LocaleId; alterna
   if (items.length < 2) return null;
 
   return (
-    <nav aria-label="Language" className="flex items-center gap-1.5 text-[13px]">
-      {items.map(({ entry, href }, index) => (
-        <span key={entry.id} className="flex items-center gap-1.5">
-          {index > 0 && (
-            <span aria-hidden="true" className="text-[var(--line)]">
-              |
-            </span>
-          )}
-          {href ? (
-            <Link href={href} hrefLang={entry.hreflang} className="text-[var(--muted)] hover:text-[var(--foreground)]">
-              {entry.shortLabel}
-            </Link>
-          ) : (
-            <span aria-current="true" className="font-medium text-[var(--foreground)]">
-              {entry.shortLabel}
-            </span>
-          )}
-        </span>
-      ))}
+    <nav
+      aria-label="Language"
+      className="flex shrink-0 rounded-md border border-[var(--accent)]/45 p-0.5 text-[10px] font-medium tracking-[0.16em] uppercase"
+    >
+      {items.map(({ entry, href }) =>
+        href ? (
+          <Link
+            key={entry.id}
+            href={href}
+            hrefLang={entry.hreflang}
+            className="rounded-[5px] px-2.5 py-1 text-[var(--muted)] transition-colors hover:text-white"
+          >
+            {entry.shortLabel}
+          </Link>
+        ) : (
+          <span
+            key={entry.id}
+            aria-current="true"
+            className="rounded-[5px] bg-[var(--accent)] px-2.5 py-1 text-white"
+          >
+            {entry.shortLabel}
+          </span>
+        ),
+      )}
     </nav>
   );
 }
@@ -63,11 +68,16 @@ export function PageShell({
   activeCountrySlug?: string;
 }) {
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[var(--background)]/92 backdrop-blur-sm">
-        <div className="mx-auto flex h-11 max-w-6xl items-center justify-between gap-3 px-3 sm:h-12 sm:px-4">
-          <Link href={homePath(locale)} className="shrink-0 text-[13px] font-medium tracking-[0.22em] uppercase">
-            {dictionary.common.siteName}
+    <div className="relative z-10 flex min-h-screen flex-col">
+      <header className="sticky top-0 z-30 border-b border-[var(--accent)]/20 bg-[var(--background)]/80 backdrop-blur-md">
+        <div className="mx-auto flex h-12 max-w-6xl items-center justify-between gap-3 px-3 sm:h-14 sm:px-4">
+          <Link
+            href={homePath(locale)}
+            className="shrink-0 text-[13px] font-semibold tracking-[0.22em] uppercase"
+            aria-label={dictionary.common.siteName}
+          >
+            <span className="text-white">Exotic</span>
+            <span className="text-[var(--accent)]">HK</span>
           </Link>
           <Suspense fallback={<span className="min-h-[1em] flex-1" />}>
             <CountryNav locale={locale} dictionary={dictionary} activeCountrySlug={activeCountrySlug} />
@@ -77,9 +87,14 @@ export function PageShell({
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-3 pt-3 pb-8 sm:px-4 sm:pt-4">{children}</main>
       {footer && (
-        <footer className="border-t border-[var(--line)] py-5">
-          <div className="mx-auto max-w-6xl px-3 text-[12px] text-[var(--muted)] sm:px-4">
-            © {new Date().getFullYear()} {dictionary.common.siteName}
+        <footer className="border-t border-[var(--line)] py-6">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-3 text-[12px] text-[var(--muted)] sm:px-4">
+            <p>
+              © {new Date().getFullYear()} {dictionary.common.siteName}
+            </p>
+            <p className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--accent)]/50 text-[10px] tracking-wide text-[var(--accent-soft)]">
+              {dictionary.common.adultsOnly}
+            </p>
           </div>
         </footer>
       )}
