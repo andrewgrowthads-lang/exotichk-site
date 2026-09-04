@@ -35,7 +35,7 @@ export function DistrictView({
   ];
 
   return (
-    <PageShell locale={locale} dictionary={dictionary} alternateHref={alternateHref}>
+    <PageShell locale={locale} dictionary={dictionary} alternateHref={alternateHref} activeCountrySlug={country.slug}>
       <JsonLd
         data={breadcrumbJsonLd(breadcrumbs.map((item) => ({ name: item.label, url: absoluteUrl(item.href) })))}
       />

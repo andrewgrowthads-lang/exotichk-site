@@ -1,8 +1,12 @@
 import { defineField, defineType } from "sanity";
 import { PUBLISHED_STATUS } from "@/lib/visibility";
+import { ProfileDocumentInput } from "@/sanity/components/ProfileDocumentInput";
+import { generateInternalId } from "@/sanity/lib/generateInternalId";
 import { validateContactUrl } from "@/sanity/schemaTypes/validators/contactUrl";
 import { districtBelongsToCountry } from "@/sanity/schemaTypes/validators/districtBelongsToCountry";
+import { immutableInternalName } from "@/sanity/schemaTypes/validators/immutableInternalName";
 import { immutablePublishedSlug } from "@/sanity/schemaTypes/validators/immutablePublishedSlug";
+import { uniqueInternalName } from "@/sanity/schemaTypes/validators/uniqueInternalName";
 import { uniqueSlugWithinCountry } from "@/sanity/schemaTypes/validators/uniqueSlugWithinCountry";
 
 interface ProfileDraft {
@@ -18,34 +22,29 @@ const STATUS_OPTIONS = [
   { title: "Archived", value: "archived" },
 ];
 
+let siteContactCache: { at: number; value: { telegramUrl?: string; whatsappUrl?: string } | null } | null =
+  null;
+/** Debounces the site-settings GROQ that otherwise ran on every keystroke. Publish still re-validates; 5s is shorter than a deliberate settings change. */
+const SITE_CONTACT_CACHE_MS = 5_000;
+
 export const profile = defineType({
   name: "profile",
   title: "Profile",
   type: "document",
+  components: { input: ProfileDocumentInput },
   groups: [
-    { name: "content", title: "Content", default: true },
-    { name: "photos", title: "Photos" },
-    { name: "details", title: "Details" },
-    { name: "contact", title: "Contact" },
-    { name: "seo", title: "SEO" },
+    { name: "basic", title: "Basic", default: true },
+    { name: "advanced", title: "Advanced" },
+    { name: "contact", title: "Contact overrides" },
+    { name: "seo", title: "Advanced SEO" },
   ],
   fields: [
-    // --- Content: name, location, publishing state ---
-    defineField({
-      name: "internalName",
-      title: "Internal ID",
-      type: "string",
-      description:
-        'A short code to tell profiles apart, e.g. "HK015". Not shown on the page, but included in the pre-filled WhatsApp message when a visitor taps "Contact on WhatsApp" (e.g. "Hi! I\'m interested in Anna — HK015.") — keep it short and stable.',
-      group: "content",
-      validation: (rule) => rule.required(),
-    }),
     defineField({
       name: "displayName",
       title: "Display name",
       type: "string",
       description: "The name shown on the site. Not translated — used as-is in both languages.",
-      group: "content",
+      group: "basic",
       validation: (rule) => rule.required(),
     }),
     defineField({
@@ -53,7 +52,7 @@ export const profile = defineType({
       title: "Country",
       type: "reference",
       to: [{ type: "country" }],
-      group: "content",
+      group: "basic",
       validation: (rule) => rule.required(),
     }),
     defineField({
@@ -62,79 +61,32 @@ export const profile = defineType({
       type: "reference",
       to: [{ type: "district" }],
       description: "Must belong to the selected country. The district does not appear in the profile's web address.",
-      group: "content",
+      group: "basic",
       validation: (rule) => districtBelongsToCountry()(rule.required()),
-    }),
-    defineField({
-      name: "slug",
-      title: "Slug",
-      description:
-        "Part of the web address (/{country}/profiles/{slug}/). Generated from the display name — avoid changing it after the first publish. If it must change, add a 301 entry for every locale in src/lib/permanentRedirects.ts before publishing.",
-      type: "slug",
-      options: { source: "displayName", maxLength: 64 },
-      group: "content",
-      validation: (rule) =>
-        immutablePublishedSlug()(uniqueSlugWithinCountry("profile")(rule.required())),
     }),
     defineField({
       name: "status",
       title: "Status",
       type: "string",
       description:
-        'Controls where this profile shows up. To keep working on a profile without publishing it, just leave it unpublished (the "Publish" button) — that is Draft, no status value needed for it.',
+        'Controls where this profile shows up. To keep working on a profile without publishing it, just leave it unpublished (the "Publish" button).',
       options: { list: STATUS_OPTIONS, layout: "radio" },
       initialValue: "active",
-      group: "content",
+      group: "basic",
       validation: (rule) => rule.required(),
     }),
-    defineField({
-      name: "featured",
-      title: "Featured",
-      type: "boolean",
-      description: "Featured profiles are shown first, ahead of the sort order below.",
-      initialValue: false,
-      group: "content",
-    }),
-    defineField({
-      name: "sortOrder",
-      title: "Sort order",
-      type: "number",
-      description: "Lower numbers appear first (after any featured profiles).",
-      initialValue: 0,
-      group: "content",
-    }),
-
-    // --- Photos ---
-    defineField({
-      name: "mainImage",
-      title: "Main photo",
-      description: "The cover photo shown on cards and first in the gallery.",
-      type: "localeImage",
-      group: "photos",
-    }),
-    defineField({
-      name: "gallery",
-      title: "Gallery",
-      description: "Additional photos, shown after the main photo. Optional.",
-      type: "array",
-      of: [{ type: "localeImage" }],
-      validation: (rule) => rule.max(11),
-      group: "photos",
-    }),
-
-    // --- Details ---
     defineField({
       name: "age",
       title: "Age",
       type: "number",
-      group: "details",
+      group: "basic",
       validation: (rule) => rule.integer().min(18).max(99),
     }),
     defineField({
       name: "height",
       title: "Height (cm)",
       type: "number",
-      group: "details",
+      group: "basic",
       validation: (rule) => rule.integer().min(100).max(220),
     }),
     defineField({
@@ -142,7 +94,7 @@ export const profile = defineType({
       title: "Nationality",
       type: "string",
       description: 'Free text, e.g. "Filipino". Shown as-is on the site.',
-      group: "details",
+      group: "basic",
     }),
     defineField({
       name: "languages",
@@ -151,22 +103,78 @@ export const profile = defineType({
       type: "array",
       of: [{ type: "string" }],
       options: { layout: "tags" },
-      group: "details",
+      group: "basic",
+    }),
+    defineField({
+      name: "mainImage",
+      title: "Main photo",
+      description: "The cover photo shown on cards and first in the gallery.",
+      type: "localeImage",
+      group: "basic",
+    }),
+    defineField({
+      name: "gallery",
+      title: "Gallery",
+      description: "Additional photos, shown after the main photo. Optional. You can select multiple files at once.",
+      type: "array",
+      of: [{ type: "localeImage" }],
+      options: { layout: "grid" },
+      validation: (rule) => rule.max(11),
+      group: "basic",
     }),
     defineField({
       name: "summary",
-      title: "Short description",
-      description: "One or two sentences. Shown on the profile page, right under the name.",
+      title: "English summary",
+      description:
+        "One or two sentences under the name. Chinese is generated with “Generate / Update 中文” in the document menu.",
       type: "localeText",
-      group: "details",
+      group: "basic",
       validation: (rule) => rule.required(),
     }),
     defineField({
       name: "body",
-      title: "Full description",
-      description: "The longer text further down the profile page. Optional.",
+      title: "English description",
+      description: "Longer text further down the profile page. Optional. Chinese is generated with the 中文 action.",
       type: "localeText",
-      group: "details",
+      group: "basic",
+    }),
+
+    defineField({
+      name: "internalName",
+      title: "Internal ID",
+      type: "string",
+      description: "Assigned automatically once. Included in the pre-filled WhatsApp message. Not shown on the page.",
+      group: "advanced",
+      readOnly: true,
+      initialValue: generateInternalId,
+      validation: (rule) => immutableInternalName()(uniqueInternalName()(rule.required())),
+    }),
+    defineField({
+      name: "slug",
+      title: "Slug",
+      description:
+        "Part of the web address (/{country}/profiles/{slug}/). Filled from the display name — do not change it after the first publish. If it must change, add a 301 in src/lib/permanentRedirects.ts first.",
+      type: "slug",
+      options: { source: "displayName", maxLength: 64 },
+      group: "advanced",
+      validation: (rule) =>
+        immutablePublishedSlug()(uniqueSlugWithinCountry("profile")(rule.required())),
+    }),
+    defineField({
+      name: "featured",
+      title: "Featured",
+      type: "boolean",
+      description: "Featured profiles are shown first, ahead of the sort order below.",
+      initialValue: false,
+      group: "advanced",
+    }),
+    defineField({
+      name: "sortOrder",
+      title: "Sort order",
+      type: "number",
+      description: "Lower numbers appear first (after any featured profiles).",
+      initialValue: 0,
+      group: "advanced",
     }),
     defineField({
       name: "attributes",
@@ -175,13 +183,37 @@ export const profile = defineType({
       type: "array",
       of: [{ type: "string" }],
       options: { layout: "tags" },
-      group: "details",
+      group: "advanced",
+    }),
+    defineField({
+      name: "publishedAt",
+      title: "Published at",
+      type: "datetime",
+      initialValue: () => new Date().toISOString(),
+      group: "advanced",
+    }),
+    defineField({
+      name: "translationMeta",
+      title: "Translation metadata",
+      type: "object",
+      hidden: true,
+      group: "advanced",
+      fields: [
+        defineField({ name: "summaryEn", type: "string" }),
+        defineField({ name: "summaryZh", type: "string" }),
+        defineField({ name: "bodyEn", type: "string" }),
+        defineField({ name: "bodyZh", type: "string" }),
+        defineField({ name: "seoTitleEn", type: "string" }),
+        defineField({ name: "seoTitleZh", type: "string" }),
+        defineField({ name: "seoDescriptionEn", type: "string" }),
+        defineField({ name: "seoDescriptionZh", type: "string" }),
+      ],
     }),
 
-    // --- Contact ---
     defineField({
       name: "telegramUrl",
       title: "Telegram (overrides site default)",
+      description: "Leave empty to use the Site settings contact.",
       type: "url",
       group: "contact",
       validation: validateContactUrl("telegram"),
@@ -189,6 +221,7 @@ export const profile = defineType({
     defineField({
       name: "whatsappUrl",
       title: "WhatsApp (overrides site default)",
+      description: "Leave empty to use the Site settings contact.",
       type: "url",
       group: "contact",
       validation: validateContactUrl("whatsapp"),
@@ -207,26 +240,18 @@ export const profile = defineType({
       type: "localeText",
       group: "contact",
     }),
-    defineField({
-      name: "publishedAt",
-      title: "Published at",
-      type: "datetime",
-      initialValue: () => new Date().toISOString(),
-      group: "contact",
-    }),
 
-    // --- SEO ---
     defineField({
       name: "seoTitle",
       title: "SEO title (optional override)",
-      description: "Shown in the browser tab and Google search results. Leave blank to use the display name.",
+      description: "Browser tab and Google. Leave blank to use the display name.",
       type: "localeString",
       group: "seo",
     }),
     defineField({
       name: "seoDescription",
       title: "Meta description (optional override)",
-      description: "The snippet shown under the title in Google search results. Leave blank to use the short description.",
+      description: "Snippet under the title in Google. Leave blank to use the short description.",
       type: "localeText",
       group: "seo",
     }),
@@ -240,7 +265,7 @@ export const profile = defineType({
     defineField({
       name: "ogImage",
       title: "Social share image (optional)",
-      description: "Shown when this profile's link is shared on WhatsApp, Telegram, etc. Leave blank to use the main photo.",
+      description: "Shown when this profile's link is shared. Leave blank to use the main photo.",
       type: "image",
       options: { hotspot: true },
       group: "seo",
@@ -249,7 +274,7 @@ export const profile = defineType({
       name: "seoNoIndex",
       title: "Hide from search engines",
       description:
-        "Keeps the page visible on the site and reachable by link, but asks Google not to index it. The profile still stays out of Google either way while Archived.",
+        "Keeps the page visible on the site and reachable by link, but asks Google not to index it. Archived profiles stay out of Google either way.",
       type: "boolean",
       initialValue: false,
       group: "seo",
@@ -261,27 +286,23 @@ export const profile = defineType({
       const status = draft?.status;
       if (!status) return true;
 
-      // Sourced from `lib/visibility.ts` rather than re-listed here, so a
-      // new publicly-rendered status cannot be added without inheriting
-      // the contact requirement below.
       const publiclyRendered = (PUBLISHED_STATUS.profile as readonly string[]).includes(status);
       if (!publiclyRendered) return true;
 
-      // A temporarily unavailable profile may legitimately be mid-update,
-      // so only a fully active one is required to have its photo.
       if (status === "active" && !draft?.mainImage) {
         return "An active profile needs at least a main photo.";
       }
 
-      // Every publicly rendered status shows the contact CTA, including
-      // "temporarily unavailable" — that page's whole point is that a
-      // visitor can still message the manager. Without a link here or a
-      // site-wide default, the profile ships with no way to reach anyone.
       if (draft?.telegramUrl || draft?.whatsappUrl) return true;
-      const client = context.getClient({ apiVersion: "2026-01-01" });
-      const settings = await client.fetch<{ telegramUrl?: string; whatsappUrl?: string } | null>(
-        `*[_type == "siteSettings"][0]{ telegramUrl, whatsappUrl }`,
-      );
+      const now = Date.now();
+      let settings = siteContactCache && now - siteContactCache.at < SITE_CONTACT_CACHE_MS ? siteContactCache.value : null;
+      if (!siteContactCache || now - siteContactCache.at >= SITE_CONTACT_CACHE_MS) {
+        settings = await context.getClient({ apiVersion: "2026-01-01" }).fetch<{
+          telegramUrl?: string;
+          whatsappUrl?: string;
+        } | null>(`*[_type == "siteSettings"][0]{ telegramUrl, whatsappUrl }`);
+        siteContactCache = { at: now, value: settings };
+      }
       if (settings?.telegramUrl || settings?.whatsappUrl) return true;
       return "A published profile needs at least one contact method, either on the profile or as a site-wide default.";
     }),

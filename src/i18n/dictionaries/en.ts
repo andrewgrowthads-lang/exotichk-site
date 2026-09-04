@@ -8,12 +8,6 @@ const dictionary = {
     all: "All",
     breadcrumbHome: "Home",
   },
-  home: {
-    heading: "Explore Hong Kong",
-    intro: "Browse by district, discover featured profiles, or open the complete Hong Kong catalogue.",
-    featured: "Featured profiles",
-    viewCountry: "View all Hong Kong profiles",
-  },
   contact: {
     telegram: "Telegram",
     whatsapp: "WhatsApp",

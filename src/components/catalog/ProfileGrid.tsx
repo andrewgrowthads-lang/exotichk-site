@@ -24,8 +24,8 @@ export function ProfileGrid({
 }) {
   // Country and district listings render this grid unconditionally, so the
   // "nothing to show" case belongs here rather than at each call site.
-  // `HomeView` and `ProfileView` still gate on length themselves because
-  // their sections have their own headings to suppress as well.
+  // `ProfileView` still gates on length because that section has its own
+  // heading to suppress as well.
   if (profiles.length === 0) {
     return (
       <div className="rounded-lg bg-[var(--surface)] px-4 py-8 text-center">

@@ -1,5 +1,6 @@
 import { defineConfig } from "sanity";
 import { structureTool } from "sanity/structure";
+import { GenerateChineseAction } from "@/sanity/actions/generateChinese";
 import { schemaTypes } from "@/sanity/schemaTypes";
 
 /**
@@ -34,5 +35,9 @@ export default defineConfig({
   ],
   schema: {
     types: schemaTypes,
+  },
+  document: {
+    actions: (previous, context) =>
+      context.schemaType === "profile" ? [GenerateChineseAction, ...previous] : previous,
   },
 });

@@ -10,12 +10,6 @@ const dictionary: Dictionary = {
     all: "全部",
     breadcrumbHome: "首頁",
   },
-  home: {
-    heading: "探索香港",
-    intro: "按地區瀏覽、查看精選檔案，或開啟完整的香港目錄。",
-    featured: "精選檔案",
-    viewCountry: "查看所有香港檔案",
-  },
   contact: {
     telegram: "Telegram",
     whatsapp: "WhatsApp",

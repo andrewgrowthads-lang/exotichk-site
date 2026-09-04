@@ -31,13 +31,21 @@ export function CountryView({
   ];
 
   return (
-    <PageShell locale={locale} dictionary={dictionary} alternateHref={alternateHref}>
+    <PageShell locale={locale} dictionary={dictionary} alternateHref={alternateHref} activeCountrySlug={country.slug}>
       <JsonLd
         data={breadcrumbJsonLd(breadcrumbs.map((item) => ({ name: item.label, url: absoluteUrl(item.href) })))}
       />
       <Breadcrumbs items={breadcrumbs} />
       <h1 className="text-[20px] font-medium tracking-tight">{countryTitle}</h1>
-      <div className="mt-2">
+      <p className="mt-2 max-w-xl text-[13px] leading-relaxed text-[var(--muted)]">
+        {pickLocalizedText(country.intro, locale)}
+      </p>
+      {pickLocalizedText(country.body, locale) && (
+        <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-[var(--muted)]">
+          {pickLocalizedText(country.body, locale)}
+        </p>
+      )}
+      <div className="mt-4">
         <DistrictChips
           countrySlug={country.slug}
           districts={districts}
@@ -49,14 +57,6 @@ export function CountryView({
       <div className="mt-3">
         <ProfileGrid profiles={profiles} locale={locale} dictionary={dictionary} priorityFirst />
       </div>
-      <p className="mt-10 max-w-xl text-[13px] leading-relaxed text-[var(--muted)]">
-        {pickLocalizedText(country.intro, locale)}
-      </p>
-      {pickLocalizedText(country.body, locale) && (
-        <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-[var(--muted)]">
-          {pickLocalizedText(country.body, locale)}
-        </p>
-      )}
     </PageShell>
   );
 }

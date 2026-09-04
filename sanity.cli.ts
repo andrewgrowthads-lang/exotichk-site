@@ -5,4 +5,8 @@ export default defineCliConfig({
     projectId: process.env.SANITY_STUDIO_PROJECT_ID ?? process.env.NEXT_PUBLIC_SANITY_PROJECT_ID ?? "",
     dataset: process.env.SANITY_STUDIO_DATASET ?? process.env.NEXT_PUBLIC_SANITY_DATASET ?? "production",
   },
+  studioHost: "exotichk-admin",
+  deployment: {
+    appId: "jb9br1tnwceit9pidalpfma1",
+  },
 });

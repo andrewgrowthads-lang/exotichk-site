@@ -1,8 +1,9 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { locales, type LocaleId } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { homePath } from "@/lib/urls";
+import { CountryNav } from "@/components/layout/CountryNav";
 
 /**
  * "EN | 中文" toggle: the current locale is plain text (nothing to click
@@ -52,20 +53,25 @@ export function PageShell({
   alternateHref,
   children,
   footer = true,
+  activeCountrySlug,
 }: {
   locale: LocaleId;
   dictionary: Dictionary;
   alternateHref?: string;
   children: ReactNode;
   footer?: boolean;
+  activeCountrySlug?: string;
 }) {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[var(--background)]/92 backdrop-blur-sm">
-        <div className="mx-auto flex h-11 max-w-6xl items-center justify-between px-3 sm:h-12 sm:px-4">
-          <Link href={homePath(locale)} className="text-[13px] font-medium tracking-[0.22em] uppercase">
+        <div className="mx-auto flex h-11 max-w-6xl items-center justify-between gap-3 px-3 sm:h-12 sm:px-4">
+          <Link href={homePath(locale)} className="shrink-0 text-[13px] font-medium tracking-[0.22em] uppercase">
             {dictionary.common.siteName}
           </Link>
+          <Suspense fallback={<span className="min-h-[1em] flex-1" />}>
+            <CountryNav locale={locale} dictionary={dictionary} activeCountrySlug={activeCountrySlug} />
+          </Suspense>
           <LanguageSwitcher locale={locale} alternateHref={alternateHref} />
         </div>
       </header>

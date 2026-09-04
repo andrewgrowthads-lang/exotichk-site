@@ -16,7 +16,6 @@ import {
   getCountryBySlug,
   getDistrictBySlug,
   getDistrictsForCountry,
-  getFeaturedProfilesForCountry,
   getProfileBySlug,
   getProfilesForCountry,
   getProfilesForDistrict,
@@ -56,20 +55,40 @@ export interface HomePageData {
   defaultSeoDescription?: string;
 }
 
+export interface CountryNavItem {
+  slug: string;
+  title: string;
+}
+
+export interface CountryNavData {
+  countries: CountryNavItem[];
+  homeCountrySlug?: string;
+}
+
+/** Header switcher: default country maps to `/`, others to their country URL. */
+export async function loadCountryNav(locale: LocaleId): Promise<CountryNavData> {
+  const countries = await getCountries();
+  return {
+    homeCountrySlug: countries[0]?.slug,
+    countries: countries
+      .filter((country) => isVisible({ ...countryVisibility(country), locale }))
+      .map((country) => ({
+        slug: country.slug,
+        title: pickLocalizedText(country.title, locale),
+      })),
+  };
+}
+
 /**
- * The English landing page shows the single supported country's
- * listing (Hong Kong today). If more countries are added, the landing
- * page becomes a country picker instead — not needed yet at this scale.
- *
- * Visibility is entirely delegated to `loadCountryPage`: the home page
- * *is* that country's page, just at a different URL, so it must 404 for
- * a locale under the exact same conditions.
+ * Brand catalogue at `/` for the default country (first by sort order).
+ * Visibility still matches that country's page so a locale 404s here
+ * under the same conditions as `/{country}/`.
  */
 export async function loadHomePage(locale: LocaleId): Promise<HomePageData> {
   const [countries, settings] = await Promise.all([getCountries(), getSiteSettings()]);
   const country = countries[0];
   if (!country) notFound();
-  const page = await loadCountryPage(country.slug, locale, { featuredOnly: true });
+  const page = await loadCountryPage(country.slug, locale);
   return {
     ...page,
     alternates: page.alternates.map((alt) => ({ locale: alt.locale, path: homePath(alt.locale) })),
@@ -91,11 +110,7 @@ export interface CountryPageData {
   indexable: boolean;
 }
 
-export async function loadCountryPage(
-  countrySlug: string,
-  locale: LocaleId,
-  options: { featuredOnly?: boolean } = {},
-): Promise<CountryPageData> {
+export async function loadCountryPage(countrySlug: string, locale: LocaleId): Promise<CountryPageData> {
   const [country, settings] = await Promise.all([getCountryBySlug(countrySlug), getSiteSettings()]);
   if (!country) notFound();
 
@@ -104,9 +119,7 @@ export async function loadCountryPage(
 
   const [districts, profiles] = await Promise.all([
     getDistrictsForCountry(countrySlug),
-    options.featuredOnly
-      ? getFeaturedProfilesForCountry(countrySlug)
-      : getProfilesForCountry(countrySlug),
+    getProfilesForCountry(countrySlug),
   ]);
   const visibleProfiles = onlyVisibleProfiles(profiles, locale);
   return {

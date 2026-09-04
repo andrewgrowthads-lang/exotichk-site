@@ -64,7 +64,7 @@ export function ProfileView({
   };
 
   return (
-    <PageShell locale={locale} dictionary={dictionary} alternateHref={alternateHref} footer={similar.length === 0}>
+    <PageShell locale={locale} dictionary={dictionary} alternateHref={alternateHref} footer={similar.length === 0} activeCountrySlug={country.slug}>
       <ProfileViewTracker {...analyticsContext} />
       <JsonLd
         data={breadcrumbJsonLd(breadcrumbs.map((item) => ({ name: item.label, url: absoluteUrl(item.href) })))}
