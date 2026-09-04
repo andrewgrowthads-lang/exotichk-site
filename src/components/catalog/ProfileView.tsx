@@ -8,6 +8,7 @@ import { ProfileViewTracker } from "@/components/analytics/ProfileViewTracker";
 import { ProfileGallery } from "@/components/catalog/ProfileGallery";
 import { ProfileGrid } from "@/components/catalog/ProfileGrid";
 import { ContactButtons } from "@/components/contact/ContactButtons";
+import { CatalogFrame } from "@/components/layout/CatalogFrame";
 import { PageShell } from "@/components/layout/PageShell";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
 import type { ContactLinks, CountryDetail, ProfileDetail, ProfileSummary } from "@/types/content";
@@ -71,6 +72,7 @@ export function ProfileView({
       <JsonLd
         data={breadcrumbJsonLd(breadcrumbs.map((item) => ({ name: item.label, url: absoluteUrl(item.href) })))}
       />
+      <CatalogFrame className="pt-4 pb-10 sm:pt-5">
       <div className={showStickyContact ? "pb-24 md:pb-0" : undefined}>
       <Link
         href={listHref}
@@ -160,6 +162,7 @@ export function ProfileView({
         </section>
       )}
       </div>
+      </CatalogFrame>
 
       {showStickyContact && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--accent)]/25 bg-[var(--background)]/92 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md md:hidden">

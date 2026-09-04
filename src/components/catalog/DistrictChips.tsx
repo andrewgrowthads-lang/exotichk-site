@@ -22,7 +22,7 @@ export function DistrictChips({
 }) {
   const allActive = !active;
   const chip = (isActive: boolean) =>
-    `flex shrink-0 items-center rounded-md px-3.5 text-[12px] font-medium tracking-[0.08em] min-h-10 transition-colors ${
+    `flex shrink-0 items-center rounded-md px-3.5 text-[12px] font-medium tracking-[0.12em] uppercase min-h-10 transition-colors ${
       isActive
         ? "bg-[var(--accent)] text-white"
         : "border border-[var(--line)] bg-[var(--surface)] text-[var(--foreground)] hover:border-[var(--accent)]/60"

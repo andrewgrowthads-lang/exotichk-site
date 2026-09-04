@@ -13,4 +13,7 @@
 export const permanentRedirects: readonly {
   source: string;
   destination: string;
-}[] = [];
+}[] = [
+  { source: "/hong-kong/central/", destination: "/hong-kong/tst/" },
+  { source: "/zh-hk/hong-kong/central/", destination: "/zh-hk/hong-kong/tst/" },
+];

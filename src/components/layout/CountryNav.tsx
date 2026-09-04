@@ -3,6 +3,7 @@ import type { LocaleId } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { countryNavHref } from "@/lib/countryNav";
 import { loadCountryNav } from "@/sanity/pageData";
+import { HongKongFlag } from "@/components/brand/HongKongFlag";
 
 export async function CountryNav({
   locale,
@@ -19,23 +20,31 @@ export async function CountryNav({
   return (
     <nav
       aria-label={dictionary.common.countries}
-      className="flex min-w-0 flex-1 items-center justify-center gap-1.5 overflow-x-auto hide-scrollbar"
+      className="flex min-w-0 items-center justify-end gap-1.5 overflow-x-auto hide-scrollbar"
     >
       {countries.map((country) => {
         const href = countryNavHref(country.slug, homeCountrySlug, locale);
         const current = country.slug === activeCountrySlug;
-        const className = `shrink-0 rounded-md px-2.5 py-1 text-[11px] font-medium tracking-[0.12em] uppercase transition-colors ${
+        const className = `flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium tracking-[0.14em] uppercase transition-colors sm:px-2.5 ${
           current
-            ? "bg-[var(--surface-2)] text-white ring-1 ring-[var(--accent)]/70"
+            ? "bg-[var(--surface-2)] text-white ring-1 ring-[var(--accent)]/55"
             : "text-[var(--muted)] hover:text-white"
         }`;
+        const label = (
+          <>
+            {country.slug === "hong-kong" && (
+              <HongKongFlag className="h-3.5 w-[21px] rounded-[2px] ring-1 ring-white/20" />
+            )}
+            {country.title}
+          </>
+        );
         return current ? (
           <span key={country.slug} aria-current="page" className={className}>
-            {country.title}
+            {label}
           </span>
         ) : (
           <Link key={country.slug} href={href} className={className}>
-            {country.title}
+            {label}
           </Link>
         );
       })}

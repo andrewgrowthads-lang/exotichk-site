@@ -6,6 +6,7 @@ import { DistrictChips } from "@/components/catalog/DistrictChips";
 import { ProfileGrid } from "@/components/catalog/ProfileGrid";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/components/seo/JsonLd";
 import { absoluteUrl, homePath } from "@/lib/urls";
+import { CatalogFrame } from "@/components/layout/CatalogFrame";
 import { PageShell } from "@/components/layout/PageShell";
 import type { CountryDetail, DistrictDetail, ProfileSummary } from "@/types/content";
 
@@ -62,8 +63,9 @@ export function HomeView({
         image={country.image}
         locale={locale}
         titleAs="p"
+        showFlag={country.slug === "hong-kong"}
       />
-      <div className="mt-4">
+      <CatalogFrame className="pt-5 pb-10 sm:pt-6">
         <DistrictChips
           countrySlug={country.slug}
           districts={districts}
@@ -71,20 +73,20 @@ export function HomeView({
           dictionary={dictionary}
           allHref={homePath(locale)}
         />
-      </div>
-      <div className="mt-4">
-        <ProfileGrid profiles={profiles} locale={locale} dictionary={dictionary} priorityFirst />
-      </div>
-      {pickLocalizedText(country.intro, locale) && (
-        <p className="mt-10 max-w-xl text-[13px] leading-relaxed text-[var(--muted)]">
-          {pickLocalizedText(country.intro, locale)}
-        </p>
-      )}
-      {pickLocalizedText(country.body, locale) && (
-        <p className="mt-3 max-w-xl text-[13px] leading-relaxed text-[var(--muted)]">
-          {pickLocalizedText(country.body, locale)}
-        </p>
-      )}
+        <div className="mt-4 sm:mt-5">
+          <ProfileGrid profiles={profiles} locale={locale} dictionary={dictionary} priorityFirst />
+        </div>
+        {pickLocalizedText(country.intro, locale) && (
+          <p className="mt-10 max-w-2xl text-[13px] leading-relaxed text-[var(--muted)]">
+            {pickLocalizedText(country.intro, locale)}
+          </p>
+        )}
+        {pickLocalizedText(country.body, locale) && (
+          <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[var(--muted)]">
+            {pickLocalizedText(country.body, locale)}
+          </p>
+        )}
+      </CatalogFrame>
     </PageShell>
   );
 }
