@@ -5,19 +5,33 @@ const dictionary = {
     countries: "Destinations",
     districts: "Districts",
     profiles: "Profiles",
+    all: "All",
     breadcrumbHome: "Home",
   },
-  nav: {
-    switchLanguage: "繁體中文",
+  home: {
+    heading: "Explore Hong Kong",
+    intro: "Browse by district, discover featured profiles, or open the complete Hong Kong catalogue.",
+    featured: "Featured profiles",
+    viewCountry: "View all Hong Kong profiles",
   },
   contact: {
-    telegram: "Message on Telegram",
-    whatsapp: "Message on WhatsApp",
-    telegramChannel: "Join our Telegram channel",
+    telegram: "Telegram",
+    whatsapp: "WhatsApp",
+    telegramChannel: "Telegram Channel",
+  },
+  listing: {
+    empty: "No profiles are listed here at the moment.",
+    emptyHint: "Try another district, or check back soon.",
   },
   profile: {
     unavailableBadge: "Temporarily unavailable",
     contactAnyway: "Contact the manager",
+    similar: "More profiles",
+    speaks: "Speaks",
+  },
+  gallery: {
+    openPhoto: "Open photo",
+    close: "Close",
   },
   notFound: {
     title: "Page not found",

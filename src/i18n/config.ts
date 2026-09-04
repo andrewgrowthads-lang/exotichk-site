@@ -31,8 +31,12 @@ export interface LocaleConfig {
    * `<html lang>`.
    */
   readonly hreflang: string;
-  /** Label shown in the language switcher. */
+  /** Open Graph locale uses Facebook's language_REGION form. */
+  readonly openGraphLocale: string;
+  /** Label shown for this locale's fields in the Sanity Studio. */
   readonly label: string;
+  /** Short label for the "EN | 中文" language switcher — kept separate from `label` since Studio field titles favour clarity over brevity. */
+  readonly shortLabel: string;
   /** Exactly one locale must be the default (unprefixed, x-default). */
   readonly isDefault: boolean;
 }
@@ -43,7 +47,9 @@ export const locales: readonly LocaleConfig[] = [
     urlSegment: null,
     sanityField: "en",
     hreflang: "en",
+    openGraphLocale: "en_HK",
     label: "English",
+    shortLabel: "EN",
     isDefault: true,
   },
   {
@@ -51,7 +57,9 @@ export const locales: readonly LocaleConfig[] = [
     urlSegment: "zh-hk",
     sanityField: "zhHantHK",
     hreflang: "zh-Hant",
+    openGraphLocale: "zh_HK",
     label: "繁體中文",
+    shortLabel: "中文",
     isDefault: false,
   },
 ];

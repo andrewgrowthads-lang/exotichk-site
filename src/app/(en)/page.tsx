@@ -1,40 +1,48 @@
 import type { Metadata } from "next";
+import { HomeView } from "@/components/catalog/HomeView";
 import { getDictionary } from "@/i18n/dictionaries";
+import { pickLocalizedText } from "@/lib/localize";
 import { buildPageMetadata } from "@/lib/metadata";
-import { absoluteUrl, homePath } from "@/lib/urls";
-import { PageShell } from "@/components/layout/PageShell";
-import { CountryCard } from "@/components/catalog/CountryCard";
-import { JsonLd, organizationJsonLd } from "@/components/seo/JsonLd";
-import { getCountries } from "@/sanity/queries";
+import { homeSeoDescription, homeSeoTitle } from "@/lib/seo";
+import { homePath } from "@/lib/urls";
+import { loadHomePage } from "@/sanity/pageData";
 
 const LOCALE = "en" as const;
 
-export function generateMetadata(): Metadata {
+export async function generateMetadata(): Promise<Metadata> {
+  const { country, alternates, socialImageUrl, agencyName, defaultSeoTitle, defaultSeoDescription } =
+    await loadHomePage(LOCALE);
+  const dictionary = getDictionary(LOCALE);
+  const countryTitle = pickLocalizedText(country.title, LOCALE);
   return buildPageMetadata({
-    title: "ExoticHK — verified companion directory",
-    description: "Browse companion profiles by destination and district. Contact managers directly on Telegram or WhatsApp.",
+    title:
+      defaultSeoTitle ||
+      homeSeoTitle({ locale: LOCALE, siteName: agencyName || dictionary.common.siteName, country: countryTitle }),
+    description: defaultSeoDescription || homeSeoDescription(LOCALE, countryTitle),
     path: homePath(LOCALE),
     locale: LOCALE,
-    alternates: [
-      { locale: "en", path: homePath("en") },
-      { locale: "zh-Hant-HK", path: homePath("zh-Hant-HK") },
-    ],
+    alternates,
+    socialImageUrl,
+    socialImageAlt: countryTitle,
+    siteName: agencyName || dictionary.common.siteName,
   });
 }
 
 export default async function HomePage() {
   const dictionary = getDictionary(LOCALE);
-  const countries = await getCountries();
-
+  const { country, districts, profiles, alternates, logoUrl, agencyName, agencyDescription } =
+    await loadHomePage(LOCALE);
   return (
-    <PageShell locale={LOCALE} dictionary={dictionary} alternateHref={homePath("zh-Hant-HK")}>
-      <JsonLd data={organizationJsonLd({ name: dictionary.common.siteName, url: absoluteUrl(homePath(LOCALE)) })} />
-      <h1 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-50">{dictionary.common.countries}</h1>
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {countries.map((country) => (
-          <CountryCard key={country._id} country={country} locale={LOCALE} />
-        ))}
-      </div>
-    </PageShell>
+    <HomeView
+      locale={LOCALE}
+      dictionary={dictionary}
+      country={country}
+      districts={districts}
+      profiles={profiles}
+      alternateHref={alternates.find((alt) => alt.locale === "zh-Hant-HK")?.path}
+      logoUrl={logoUrl}
+      agencyName={agencyName}
+      agencyDescription={agencyDescription}
+    />
   );
 }

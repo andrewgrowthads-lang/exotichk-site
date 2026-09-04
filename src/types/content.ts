@@ -39,6 +39,7 @@ export interface CountrySummary {
 }
 
 export interface CountryDetail extends CountrySummary {
+  body?: LocalizedText;
   seoTitle?: LocalizedText;
   seoDescription?: LocalizedText;
 }
@@ -56,6 +57,7 @@ export interface DistrictSummary {
 }
 
 export interface DistrictDetail extends DistrictSummary {
+  body?: LocalizedText;
   seoTitle?: LocalizedText;
   seoDescription?: LocalizedText;
 }
@@ -66,18 +68,44 @@ export interface ProfileSummary {
   status: ProfileStatus;
   displayName: string;
   summary: LocalizedText;
+  /** Main photo first, gallery photos after — already merged in `sanity/queries.ts`. */
   images: SanityImage[];
+  featured: boolean;
+  /** Editorial override — kept at summary level so the sitemap can exclude these without a detail fetch. */
+  seoNoIndex: boolean;
   sortOrder: number;
   updatedAt: string;
   country: { slug: string };
   district: { slug: string; title: LocalizedText };
 }
 
+/** Minimal profile shape used by sitemap and static-param generation. */
+export interface ProfileIndexEntry {
+  _id: string;
+  slug: string;
+  status: ProfileStatus;
+  displayName: string;
+  summary: LocalizedText;
+  seoNoIndex: boolean;
+  updatedAt: string;
+  country: { slug: string };
+  /** Only the slug — the sitemap needs it to count a district's profiles, not to render anything. */
+  district: { slug: string };
+}
+
 export interface ProfileDetail extends ProfileSummary {
+  /** Editor-only label (e.g. "HK015"), never rendered on the page — used only to identify the profile in the WhatsApp opening message. */
+  internalName: string;
   body?: LocalizedText;
+  age?: number;
+  height?: number;
+  nationality?: string;
+  languages?: string[];
   attributes?: string[];
   seoTitle?: LocalizedText;
   seoDescription?: LocalizedText;
+  h1Override?: LocalizedText;
+  ogImage?: SanityImage;
   unavailableMessage?: LocalizedText;
   publishedAt?: string;
   contact: ContactLinks;
@@ -86,6 +114,7 @@ export interface ProfileDetail extends ProfileSummary {
 export interface SiteSettings {
   agencyName: string;
   agencyDescription?: LocalizedText;
+  logo?: SanityImage;
   defaultSeoTitle?: LocalizedText;
   defaultSeoDescription?: LocalizedText;
   defaultSocialImage?: SanityImage;

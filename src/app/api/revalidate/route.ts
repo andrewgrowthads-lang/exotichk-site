@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { revalidateTag } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
@@ -10,26 +11,30 @@ import { env } from "@/lib/env";
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!env.revalidateSecret) {
-    return NextResponse.json({ error: "Revalidation is not configured." }, { status: 500 });
+    return json({ error: "Revalidation is not configured." }, 500);
   }
 
   const providedSecret = request.headers.get("x-sanity-webhook-secret");
-  if (!providedSecret || !timingSafeEqual(providedSecret, env.revalidateSecret)) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (!providedSecret || !secretsEqual(providedSecret, env.revalidateSecret)) {
+    return json({ error: "Unauthorized." }, 401);
   }
 
   // Next.js 16 requires a cacheLife profile. `"max"` is the documented
   // catalog pattern: the next visitor is served stale HTML while the
   // tagged pages regenerate in the background.
   revalidateTag("catalog", "max");
-  return NextResponse.json({ revalidated: true });
+  return json({ revalidated: true }, 200);
 }
 
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i += 1) {
-    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return mismatch === 0;
+function secretsEqual(a: string, b: string): boolean {
+  const left = Buffer.from(a);
+  const right = Buffer.from(b);
+  return left.length === right.length && timingSafeEqual(left, right);
+}
+
+function json(body: Record<string, unknown>, status: number): NextResponse {
+  return NextResponse.json(body, {
+    status,
+    headers: { "Cache-Control": "no-store" },
+  });
 }

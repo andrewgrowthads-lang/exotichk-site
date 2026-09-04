@@ -3,44 +3,50 @@ import type { LocaleId } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { pickLocalizedText } from "@/lib/localize";
 import { profilePath } from "@/lib/urls";
-import { SanityImg } from "@/components/media/SanityImg";
+import { CatalogPhoto } from "@/components/media/CatalogPhoto";
 import type { ProfileSummary } from "@/types/content";
 
 export function ProfileCard({
   profile,
   locale,
   dictionary,
+  priority = false,
+  hideDistrict = false,
 }: {
   profile: ProfileSummary;
   locale: LocaleId;
   dictionary: Dictionary;
+  priority?: boolean;
+  hideDistrict?: boolean;
 }) {
   const districtTitle = pickLocalizedText(profile.district.title, locale);
+
   return (
     <Link
       href={profilePath(profile.country.slug, profile.slug, locale)}
-      className="group block overflow-hidden rounded-xl border border-neutral-200 transition hover:border-neutral-300 dark:border-neutral-800 dark:hover:border-neutral-700"
+      className="group block"
     >
-      <div className="aspect-[3/4] overflow-hidden bg-neutral-100 dark:bg-neutral-900">
-        <SanityImg
-          image={profile.images?.[0]}
-          locale={locale}
-          fallbackAlt={profile.displayName}
-          sizes="(min-width: 768px) 25vw, 50vw"
-          className="h-full w-full object-cover transition group-hover:scale-105"
-        />
-      </div>
-      <div className="p-3">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="font-semibold text-neutral-900 dark:text-neutral-50">{profile.displayName}</h3>
+      <article className="overflow-hidden rounded-lg bg-[var(--surface)]">
+        <div className="relative aspect-[3/4] overflow-hidden bg-[#ddd8d0]">
+          <CatalogPhoto
+            photo={profile.images?.[0]}
+            locale={locale}
+            fallbackAlt={profile.displayName}
+            priority={priority}
+            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+            className="h-full w-full object-cover"
+          />
           {profile.status === "temporarilyUnavailable" && (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+            <span className="absolute top-2 left-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] tracking-wide text-white uppercase">
               {dictionary.profile.unavailableBadge}
             </span>
           )}
         </div>
-        <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">{districtTitle}</p>
-      </div>
+        <div className="px-1.5 pt-2 pb-2.5 sm:px-2">
+          <p className="truncate text-[15px] font-medium tracking-tight text-[var(--foreground)]">{profile.displayName}</p>
+          {!hideDistrict && <p className="mt-0.5 truncate text-[12px] text-[var(--muted)]">{districtTitle}</p>}
+        </div>
+      </article>
     </Link>
   );
 }

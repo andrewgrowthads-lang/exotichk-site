@@ -1,42 +1,82 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import type { LocaleId } from "@/i18n/config";
+import { locales, type LocaleId } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { homePath } from "@/lib/urls";
 
-interface PageShellProps {
-  locale: LocaleId;
-  dictionary: Dictionary;
-  /**
-   * Path to the exact equivalent of the current page in the other
-   * locale. Omit when no such equivalent is published — the switcher
-   * must never link to a page that does not exist.
-   */
-  alternateHref?: string;
-  children: ReactNode;
+/**
+ * "EN | 中文" toggle: the current locale is plain text (nothing to click
+ * into), every other locale is a link to the exact same entity in that
+ * language — never the homepage. A locale is omitted entirely rather
+ * than shown disabled when its equivalent page isn't published yet (see
+ * `lib/visibility.ts`), so this scales to more than two locales without
+ * changes here.
+ */
+function LanguageSwitcher({ locale, alternateHref }: { locale: LocaleId; alternateHref?: string }) {
+  const items = locales
+    .map((entry) => ({
+      entry,
+      href: entry.id === locale ? undefined : alternateHref,
+    }))
+    .filter((item) => item.entry.id === locale || Boolean(item.href));
+
+  if (items.length < 2) return null;
+
+  return (
+    <nav aria-label="Language" className="flex items-center gap-1.5 text-[13px]">
+      {items.map(({ entry, href }, index) => (
+        <span key={entry.id} className="flex items-center gap-1.5">
+          {index > 0 && (
+            <span aria-hidden="true" className="text-[var(--line)]">
+              |
+            </span>
+          )}
+          {href ? (
+            <Link href={href} hrefLang={entry.hreflang} className="text-[var(--muted)] hover:text-[var(--foreground)]">
+              {entry.shortLabel}
+            </Link>
+          ) : (
+            <span aria-current="true" className="font-medium text-[var(--foreground)]">
+              {entry.shortLabel}
+            </span>
+          )}
+        </span>
+      ))}
+    </nav>
+  );
 }
 
-export function PageShell({ locale, dictionary, alternateHref, children }: PageShellProps) {
+export function PageShell({
+  locale,
+  dictionary,
+  alternateHref,
+  children,
+  footer = true,
+}: {
+  locale: LocaleId;
+  dictionary: Dictionary;
+  alternateHref?: string;
+  children: ReactNode;
+  footer?: boolean;
+}) {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-neutral-200 dark:border-neutral-800">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <Link href={homePath(locale)} className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+      <header className="sticky top-0 z-30 border-b border-[var(--line)] bg-[var(--background)]/92 backdrop-blur-sm">
+        <div className="mx-auto flex h-11 max-w-6xl items-center justify-between px-3 sm:h-12 sm:px-4">
+          <Link href={homePath(locale)} className="text-[13px] font-medium tracking-[0.22em] uppercase">
             {dictionary.common.siteName}
           </Link>
-          {alternateHref && (
-            <Link href={alternateHref} className="text-sm text-neutral-600 hover:underline dark:text-neutral-400">
-              {dictionary.nav.switchLanguage}
-            </Link>
-          )}
+          <LanguageSwitcher locale={locale} alternateHref={alternateHref} />
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">{children}</main>
-      <footer className="border-t border-neutral-200 py-6 dark:border-neutral-800">
-        <div className="mx-auto max-w-5xl px-4 text-sm text-neutral-500 dark:text-neutral-400">
-          &copy; {new Date().getFullYear()} {dictionary.common.siteName}. {dictionary.footer.rights}
-        </div>
-      </footer>
+      <main className="mx-auto w-full max-w-6xl flex-1 px-3 pt-3 pb-8 sm:px-4 sm:pt-4">{children}</main>
+      {footer && (
+        <footer className="border-t border-[var(--line)] py-5">
+          <div className="mx-auto max-w-6xl px-3 text-[12px] text-[var(--muted)] sm:px-4">
+            © {new Date().getFullYear()} {dictionary.common.siteName}
+          </div>
+        </footer>
+      )}
     </div>
   );
 }

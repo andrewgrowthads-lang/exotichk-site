@@ -27,6 +27,9 @@ export function validateContactUrl(kind: keyof typeof ALLOWED_HOSTS) {
       if (!ALLOWED_HOSTS[kind].includes(url.hostname)) {
         return `Host must be one of: ${ALLOWED_HOSTS[kind].join(", ")}.`;
       }
+      if (url.username || url.password || url.port) {
+        return "Credentials and custom ports are not allowed in contact links.";
+      }
       return true;
     });
 }

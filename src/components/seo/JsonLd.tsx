@@ -1,22 +1,33 @@
 /**
  * Serializes structured data safely: `<` is escaped so CMS-sourced text
- * cannot break out of the `<script>` tag. Only `Organization`/`WebSite`
- * and `BreadcrumbList` are emitted anywhere on the site — no invented
- * `Review`/`AggregateRating`, and no `ProfilePage`/`CollectionPage`
- * (neither produces a rich result, both are extra surface to maintain).
+ * cannot break out of the `<script>` tag. Only factual
+ * `Organization`, `WebSite`, and `BreadcrumbList` nodes are emitted —
+ * no invented `Review`/`AggregateRating` and no unsupported claims.
  */
 export function JsonLd({ data }: { data: Record<string, unknown> }) {
   const json = JSON.stringify(data).replace(/</g, "\\u003c");
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: json }} />;
 }
 
-export function organizationJsonLd(params: { name: string; url: string; logoUrl?: string }) {
+export function organizationJsonLd(params: { name: string; url: string; logoUrl?: string; description?: string }) {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": `${params.url}#organization`,
     name: params.name,
     url: params.url,
-    ...(params.logoUrl ? { logo: params.logoUrl } : {}),
+    ...(params.description ? { description: params.description } : {}),
+    ...(params.logoUrl ? { logo: { "@type": "ImageObject", url: params.logoUrl } } : {}),
+  };
+}
+
+export function websiteJsonLd(params: { name: string; url: string; language: string }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: params.name,
+    url: params.url,
+    inLanguage: params.language,
   };
 }
 

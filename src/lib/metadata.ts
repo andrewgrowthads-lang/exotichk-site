@@ -20,6 +20,10 @@ export interface PageMetadataInput {
    */
   alternates: AlternatePath[];
   socialImageUrl?: string;
+  socialImageAlt?: string;
+  siteName?: string;
+  /** Editorial override (`profile.seoNoIndex`) — keeps the page reachable but asks search engines not to index it. */
+  noIndex?: boolean;
 }
 
 /**
@@ -29,6 +33,7 @@ export interface PageMetadataInput {
  */
 export function buildPageMetadata(input: PageMetadataInput): Metadata {
   const canonical = absoluteUrl(input.path);
+  const currentLocale = locales.find((entry) => entry.id === input.locale);
 
   const languages: Record<string, string> = {};
   for (const alternate of input.alternates) {
@@ -44,6 +49,9 @@ export function buildPageMetadata(input: PageMetadataInput): Metadata {
   return {
     title: input.title,
     description: input.description,
+    robots: input.noIndex
+      ? { index: false, follow: true, googleBot: { index: false, follow: true } }
+      : { index: true, follow: true },
     alternates: {
       canonical,
       languages,
@@ -52,8 +60,22 @@ export function buildPageMetadata(input: PageMetadataInput): Metadata {
       title: input.title,
       description: input.description,
       url: canonical,
-      siteName: "ExoticHK",
-      images: input.socialImageUrl ? [{ url: input.socialImageUrl }] : undefined,
+      siteName: input.siteName ?? "ExoticHK",
+      type: "website",
+      locale: currentLocale?.openGraphLocale,
+      alternateLocale: input.alternates
+        .filter((alternate) => alternate.locale !== input.locale)
+        .map((alternate) => locales.find((entry) => entry.id === alternate.locale)?.openGraphLocale)
+        .filter((locale): locale is string => Boolean(locale)),
+      images: input.socialImageUrl
+        ? [{ url: input.socialImageUrl, alt: input.socialImageAlt ?? input.title }]
+        : undefined,
+    },
+    twitter: {
+      card: input.socialImageUrl ? "summary_large_image" : "summary",
+      title: input.title,
+      description: input.description,
+      images: input.socialImageUrl ? [input.socialImageUrl] : undefined,
     },
   };
 }

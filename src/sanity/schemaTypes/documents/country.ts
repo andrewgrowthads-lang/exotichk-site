@@ -1,5 +1,7 @@
 import { defineField, defineType } from "sanity";
 import { RESERVED_SEGMENTS } from "@/lib/slugs";
+import { blockArchiveWithActiveProfiles } from "@/sanity/schemaTypes/validators/archiveGuard";
+import { immutablePublishedSlug } from "@/sanity/schemaTypes/validators/immutablePublishedSlug";
 import { uniqueSlug } from "@/sanity/schemaTypes/validators/uniqueSlug";
 
 export const country = defineType({
@@ -18,14 +20,16 @@ export const country = defineType({
       title: "Slug",
       type: "slug",
       description:
-        "Part of the canonical URL. Treat as immutable once published — renaming requires a redirect entry in next.config.ts and a deploy.",
+        "Part of the canonical URL. Treat as immutable once published — renaming requires 301 entries in src/lib/permanentRedirects.ts for this country and every child URL, followed by a deploy.",
       options: { source: "internalName", maxLength: 64 },
       validation: (rule) =>
-        uniqueSlug("country")(
-          rule.required().custom((slug) => {
-            if (!slug?.current) return true;
-            return RESERVED_SEGMENTS.has(slug.current) ? `"${slug.current}" is a reserved path segment.` : true;
-          }),
+        immutablePublishedSlug()(
+          uniqueSlug("country")(
+            rule.required().custom((slug) => {
+              if (!slug?.current) return true;
+              return RESERVED_SEGMENTS.has(slug.current) ? `"${slug.current}" is a reserved path segment.` : true;
+            }),
+          ),
         ),
     }),
     defineField({ name: "title", title: "Title", type: "localeString", validation: (rule) => rule.required() }),
@@ -38,13 +42,19 @@ export const country = defineType({
       name: "status",
       title: "Status",
       type: "string",
-      options: { list: ["active", "archived"] },
+      options: {
+        list: [
+          { title: "Active", value: "active" },
+          { title: "Archived", value: "archived" },
+        ],
+        layout: "radio",
+      },
       initialValue: "active",
-      validation: (rule) => rule.required(),
+      validation: (rule) => blockArchiveWithActiveProfiles("country")(rule.required()),
     }),
     defineField({ name: "sortOrder", title: "Sort order", type: "number", initialValue: 0 }),
   ],
   preview: {
-    select: { title: "internalName", subtitle: "status" },
+    select: { title: "internalName", subtitle: "status", media: "image" },
   },
 });

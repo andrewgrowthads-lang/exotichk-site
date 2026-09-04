@@ -15,6 +15,11 @@ export const RESERVED_SEGMENTS = new Set([
 /** ASCII lowercase, digits and hyphens, no leading/trailing hyphen. */
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+/** Syntax-only check for slugs nested below an unambiguous static segment (for example `/profiles/:slug`). */
+export function isValidPathSegment(value: string): boolean {
+  return SLUG_PATTERN.test(value);
+}
+
 export function isValidSlug(value: string): boolean {
-  return SLUG_PATTERN.test(value) && !RESERVED_SEGMENTS.has(value);
+  return isValidPathSegment(value) && !RESERVED_SEGMENTS.has(value);
 }

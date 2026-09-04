@@ -1,64 +1,137 @@
 import { notFound } from "next/navigation";
-import { locales, type LocaleId } from "@/i18n/config";
+import type { LocaleId } from "@/i18n/config";
 import type { AlternatePath } from "@/lib/metadata";
-import { countryPath, districtPath, profilePath } from "@/lib/urls";
-import { isVisible, type ContentType } from "@/lib/visibility";
+import { countryPath, districtPath, homePath, profilePath } from "@/lib/urls";
+import { pickLocalizedText } from "@/lib/localize";
 import {
+  countryVisibility,
+  districtVisibility,
+  isListingIndexable,
+  isVisible,
+  profileVisibility,
+  visibleLocalesFor,
+} from "@/lib/visibility";
+import {
+  getCountries,
   getCountryBySlug,
   getDistrictBySlug,
   getDistrictsForCountry,
+  getFeaturedProfilesForCountry,
   getProfileBySlug,
   getProfilesForCountry,
   getProfilesForDistrict,
+  getSimilarProfiles,
+  getSiteSettings,
 } from "@/sanity/queries";
+import { plainImageUrl, socialImageUrl } from "@/sanity/image";
+import { buildWhatsAppUrl, resolveContact } from "@/lib/contact";
 import type {
+  ContactLinks,
   CountryDetail,
   DistrictDetail,
   DistrictSummary,
-  LocalizedText,
   ProfileDetail,
   ProfileSummary,
 } from "@/types/content";
 
+/** Drops listing items that would 404 in this locale — a listing must never link to a page it cannot render. */
+function onlyVisibleDistricts(districts: DistrictSummary[], locale: LocaleId): DistrictSummary[] {
+  return districts.filter((district) => isVisible({ ...districtVisibility(district), locale }));
+}
+
+function onlyVisibleProfiles(profiles: ProfileSummary[], locale: LocaleId): ProfileSummary[] {
+  return profiles.filter((profile) => isVisible({ ...profileVisibility(profile), locale }));
+}
+
+export interface HomePageData {
+  country: CountryDetail;
+  districts: DistrictDetail[];
+  profiles: ProfileSummary[];
+  alternates: AlternatePath[];
+  socialImageUrl?: string;
+  logoUrl?: string;
+  agencyName?: string;
+  agencyDescription?: string;
+  defaultSeoTitle?: string;
+  defaultSeoDescription?: string;
+}
+
 /**
- * Data loaders shared by both locale route branches for each page type.
- * Each one applies the single visibility predicate (`lib/visibility.ts`),
- * 404s through `notFound()` when the requested locale is not visible,
- * and computes the hreflang/language-switcher alternate set from the
- * *same* fetched document — no second query needed to know whether the
- * other locale exists.
+ * The English landing page shows the single supported country's
+ * listing (Hong Kong today). If more countries are added, the landing
+ * page becomes a country picker instead — not needed yet at this scale.
+ *
+ * Visibility is entirely delegated to `loadCountryPage`: the home page
+ * *is* that country's page, just at a different URL, so it must 404 for
+ * a locale under the exact same conditions.
  */
+export async function loadHomePage(locale: LocaleId): Promise<HomePageData> {
+  const [countries, settings] = await Promise.all([getCountries(), getSiteSettings()]);
+  const country = countries[0];
+  if (!country) notFound();
+  const page = await loadCountryPage(country.slug, locale, { featuredOnly: true });
+  return {
+    ...page,
+    alternates: page.alternates.map((alt) => ({ locale: alt.locale, path: homePath(alt.locale) })),
+    logoUrl: plainImageUrl(settings?.logo, 512),
+    agencyName: settings?.agencyName,
+    agencyDescription: pickLocalizedText(settings?.agencyDescription, locale) || undefined,
+    defaultSeoTitle: pickLocalizedText(settings?.defaultSeoTitle, locale) || undefined,
+    defaultSeoDescription: pickLocalizedText(settings?.defaultSeoDescription, locale) || undefined,
+  };
+}
 
 export interface CountryPageData {
   country: CountryDetail;
-  districts: DistrictSummary[];
+  districts: DistrictDetail[];
   profiles: ProfileSummary[];
   alternates: AlternatePath[];
+  socialImageUrl?: string;
+  /** `false` when the listing renders no profiles — see `isListingIndexable`. */
+  indexable: boolean;
 }
 
-export async function loadCountryPage(countrySlug: string, locale: LocaleId): Promise<CountryPageData> {
-  const country = await getCountryBySlug(countrySlug);
-  if (!country || !isVisible({ type: "country", status: country.status, title: country.title, intro: country.intro, locale })) {
-    notFound();
-  }
+export async function loadCountryPage(
+  countrySlug: string,
+  locale: LocaleId,
+  options: { featuredOnly?: boolean } = {},
+): Promise<CountryPageData> {
+  const [country, settings] = await Promise.all([getCountryBySlug(countrySlug), getSiteSettings()]);
+  if (!country) notFound();
 
-  const alternates = computeAlternates("country", country.status, country.title, country.intro, (loc) =>
-    countryPath(country.slug, loc),
-  );
+  const visibleLocales = visibleLocalesFor(countryVisibility(country));
+  if (!visibleLocales.includes(locale)) notFound();
 
   const [districts, profiles] = await Promise.all([
     getDistrictsForCountry(countrySlug),
-    getProfilesForCountry(countrySlug),
+    options.featuredOnly
+      ? getFeaturedProfilesForCountry(countrySlug)
+      : getProfilesForCountry(countrySlug),
   ]);
-
-  return { country, districts, profiles, alternates };
+  const visibleProfiles = onlyVisibleProfiles(profiles, locale);
+  return {
+    country,
+    districts: onlyVisibleDistricts(districts, locale),
+    profiles: visibleProfiles,
+    alternates: localeAlternates((l) => countryPath(country.slug, l), visibleLocales),
+    socialImageUrl: socialImageUrl(country.image) ?? socialImageUrl(settings?.defaultSocialImage),
+    indexable: isListingIndexable({
+      ...countryVisibility(country),
+      locale,
+      visibleProfileCount: visibleProfiles.length,
+    }),
+  };
 }
 
 export interface DistrictPageData {
-  country: { slug: string };
+  country: CountryDetail;
   district: DistrictDetail;
+  districts: DistrictDetail[];
   profiles: ProfileSummary[];
   alternates: AlternatePath[];
+  socialImageUrl?: string;
+  /** `false` when the listing renders no profiles — see `isListingIndexable`. */
+  indexable: boolean;
 }
 
 export async function loadDistrictPage(
@@ -66,25 +139,51 @@ export async function loadDistrictPage(
   districtSlug: string,
   locale: LocaleId,
 ): Promise<DistrictPageData> {
-  const district = await getDistrictBySlug(countrySlug, districtSlug);
-  if (
-    !district ||
-    !isVisible({ type: "district", status: district.status, title: district.title, intro: district.intro, locale })
-  ) {
-    notFound();
-  }
+  const [country, district, settings] = await Promise.all([
+    getCountryBySlug(countrySlug),
+    getDistrictBySlug(countrySlug, districtSlug),
+    getSiteSettings(),
+  ]);
+  if (!country || !district) notFound();
 
-  const alternates = computeAlternates("district", district.status, district.title, district.intro, (loc) =>
-    districtPath(countrySlug, district.slug, loc),
-  );
-  const profiles = await getProfilesForDistrict(countrySlug, districtSlug);
+  // The district's URL carries the country's slug, so a locale only
+  // counts as visible here if *both* the country and the district have
+  // it — otherwise the district page would outlive its own breadcrumb.
+  const countryLocales = visibleLocalesFor(countryVisibility(country));
+  const districtLocales = visibleLocalesFor(districtVisibility(district));
+  const visibleLocales = districtLocales.filter((l) => countryLocales.includes(l));
+  if (!visibleLocales.includes(locale)) notFound();
 
-  return { country: { slug: countrySlug }, district, profiles, alternates };
+  const [districts, profiles] = await Promise.all([
+    getDistrictsForCountry(countrySlug),
+    getProfilesForDistrict(countrySlug, districtSlug),
+  ]);
+  const visibleProfiles = onlyVisibleProfiles(profiles, locale);
+  return {
+    country,
+    district,
+    districts: onlyVisibleDistricts(districts, locale),
+    profiles: visibleProfiles,
+    alternates: localeAlternates((l) => districtPath(countrySlug, district.slug, l), visibleLocales),
+    socialImageUrl:
+      socialImageUrl(district.image) ??
+      socialImageUrl(country.image) ??
+      socialImageUrl(settings?.defaultSocialImage),
+    indexable: isListingIndexable({
+      ...districtVisibility(district),
+      locale,
+      visibleProfileCount: visibleProfiles.length,
+    }),
+  };
 }
 
 export interface ProfilePageData {
   profile: ProfileDetail;
+  country: CountryDetail;
+  similar: ProfileSummary[];
+  contact: ContactLinks;
   alternates: AlternatePath[];
+  socialImageUrl?: string;
 }
 
 export async function loadProfilePage(
@@ -92,44 +191,40 @@ export async function loadProfilePage(
   profileSlug: string,
   locale: LocaleId,
 ): Promise<ProfilePageData> {
-  const profile = await getProfileBySlug(countrySlug, profileSlug);
-  if (
-    !profile ||
-    !isVisible({
-      type: "profile",
-      status: profile.status,
-      title: profileTitle(profile.displayName),
-      intro: profile.summary,
-      locale,
-    })
-  ) {
-    notFound();
-  }
+  const [country, profile, settings] = await Promise.all([
+    getCountryBySlug(countrySlug),
+    getProfileBySlug(countrySlug, profileSlug),
+    getSiteSettings(),
+  ]);
+  if (!country || !profile) notFound();
 
-  const alternates = computeAlternates(
-    "profile",
-    profile.status,
-    profileTitle(profile.displayName),
-    profile.summary,
-    (loc) => profilePath(countrySlug, profile.slug, loc),
-  );
+  // Same reasoning as districts: the profile's URL carries the country's
+  // slug, so both need to be visible in a locale. `displayName` is not
+  // translated (shown as-is in both locales), so the only thing that can
+  // actually gate a profile's Chinese page is its short description.
+  const countryLocales = visibleLocalesFor(countryVisibility(country));
+  const profileLocales = visibleLocalesFor(profileVisibility(profile));
+  const visibleLocales = profileLocales.filter((l) => countryLocales.includes(l));
+  if (!visibleLocales.includes(locale)) notFound();
 
-  return { profile, alternates };
+  const similar = onlyVisibleProfiles(await getSimilarProfiles(countrySlug, profileSlug), locale);
+  const contact = resolveContact(profile.contact, settings?.contact);
+  return {
+    profile,
+    country,
+    similar,
+    contact: {
+      ...contact,
+      whatsappUrl: contact.whatsappUrl
+        ? buildWhatsAppUrl(contact.whatsappUrl, locale, { name: profile.displayName, internalId: profile.internalName })
+        : undefined,
+    },
+    alternates: localeAlternates((l) => profilePath(countrySlug, profile.slug, l), visibleLocales),
+    socialImageUrl: socialImageUrl(profile.ogImage) ?? socialImageUrl(profile.images[0]) ?? socialImageUrl(settings?.defaultSocialImage),
+  };
 }
 
-/** Display names are language-neutral; they must not gate Chinese visibility. */
-function profileTitle(displayName: string): LocalizedText {
-  return { en: displayName, zhHantHK: displayName };
-}
-
-function computeAlternates(
-  type: ContentType,
-  status: string,
-  title: LocalizedText,
-  intro: LocalizedText,
-  pathFor: (locale: LocaleId) => string,
-): AlternatePath[] {
-  return locales
-    .filter((locale) => isVisible({ type, status, title, intro, locale: locale.id }))
-    .map((locale) => ({ locale: locale.id, path: pathFor(locale.id) }));
+/** Builds the hreflang/switcher path list — only for locales the caller has already established are visible. */
+function localeAlternates(pathFor: (locale: LocaleId) => string, visibleLocales: LocaleId[]): AlternatePath[] {
+  return visibleLocales.map((locale) => ({ locale, path: pathFor(locale) }));
 }

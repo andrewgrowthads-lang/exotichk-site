@@ -1,9 +1,16 @@
 import type { MetadataRoute } from "next";
 import { locales, type LocaleId } from "@/i18n/config";
-import { isVisible, type ContentType } from "@/lib/visibility";
+import {
+  countryVisibility,
+  districtVisibility,
+  isListingIndexable,
+  isVisible,
+  profileVisibility,
+  visibleLocalesFor,
+} from "@/lib/visibility";
 import { absoluteUrl, countryPath, districtPath, homePath, profilePath } from "@/lib/urls";
 import { getAllCountries, getAllDistricts, getAllProfiles } from "@/sanity/queries";
-import type { LocalizedText } from "@/types/content";
+import type { ProfileIndexEntry } from "@/types/content";
 
 /**
  * Every entry's `alternates.languages` includes the entry's *own*
@@ -18,11 +25,66 @@ function languageMap(pathFor: (locale: LocaleId) => string, visibleLocales: Loca
     if (!config) continue;
     map[config.hreflang] = absoluteUrl(pathFor(locale));
   }
+  if (visibleLocales.includes("en")) {
+    map["x-default"] = absoluteUrl(pathFor("en"));
+  }
   return map;
 }
 
-function visibleLocalesFor(type: ContentType, status: string, title: LocalizedText, intro: LocalizedText): LocaleId[] {
-  return locales.filter((locale) => isVisible({ type, status, title, intro, locale: locale.id })).map((l) => l.id);
+/**
+ * hreflang sitemap syntax requires one `<url>` row per canonical locale
+ * URL, with the same complete alternate set repeated on every row.
+ * Emitting only the default locale as `<loc>` leaves translated canonical
+ * pages undiscoverable as first-class sitemap entries.
+ *
+ * The two locale lists are deliberately distinct. `listedLocales` decides
+ * which URLs the sitemap actually submits and drops thin listings;
+ * `alternateLocales` stays the full *visible* set so the hreflang cluster
+ * keeps matching what each page renders in its own `<head>`. Narrowing
+ * the alternates too would silently rewrite the hreflang logic as a side
+ * effect of a thin-content rule.
+ */
+function localizedEntries(
+  pathFor: (locale: LocaleId) => string,
+  listedLocales: LocaleId[],
+  alternateLocales: LocaleId[],
+  lastModified: Date,
+): MetadataRoute.Sitemap {
+  const languages = languageMap(pathFor, alternateLocales);
+  return listedLocales.map((locale) => ({
+    url: absoluteUrl(pathFor(locale)),
+    lastModified,
+    alternates: { languages },
+  }));
+}
+
+/**
+ * Groups the profile index the same way `getProfilesForCountry` and
+ * `getProfilesForDistrict` scope their queries, so the counts fed to
+ * `isListingIndexable` here are the counts the corresponding page will
+ * actually render. `getAllProfiles` already applies the same status and
+ * relationship filters as both of those queries, so grouping is enough —
+ * no second round trip and no second definition of "listed here".
+ */
+function groupProfiles(profiles: ProfileIndexEntry[]) {
+  const byCountry = new Map<string, ProfileIndexEntry[]>();
+  const byDistrict = new Map<string, ProfileIndexEntry[]>();
+
+  for (const profile of profiles) {
+    const countryKey = profile.country.slug;
+    const districtKey = `${countryKey}/${profile.district.slug}`;
+    byCountry.set(countryKey, [...(byCountry.get(countryKey) ?? []), profile]);
+    byDistrict.set(districtKey, [...(byDistrict.get(districtKey) ?? []), profile]);
+  }
+
+  const countIn = (bucket: ProfileIndexEntry[] | undefined, locale: LocaleId): number =>
+    (bucket ?? []).filter((profile) => isVisible({ ...profileVisibility(profile), locale })).length;
+
+  return {
+    countryProfileCount: (countrySlug: string, locale: LocaleId) => countIn(byCountry.get(countrySlug), locale),
+    districtProfileCount: (countrySlug: string, districtSlug: string, locale: LocaleId) =>
+      countIn(byDistrict.get(`${countrySlug}/${districtSlug}`), locale),
+  };
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -32,51 +94,80 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     getAllProfiles(),
   ]);
 
-  const entries: MetadataRoute.Sitemap = [
-    {
-      url: absoluteUrl(homePath("en")),
-      lastModified: new Date(),
-      alternates: { languages: languageMap((l) => homePath(l), locales.map((l) => l.id)) },
-    },
-  ];
+  // A district or profile's URL contains its country's slug, so a locale
+  // cannot be considered published for either unless the country is
+  // published in that locale too — otherwise the sitemap would list a
+  // `/zh-hk/...` URL whose own country page 404s in Chinese.
+  const countryLocales = new Map<string, LocaleId[]>(
+    countries.map((country) => [country.slug, visibleLocalesFor(countryVisibility(country))]),
+  );
+  const { countryProfileCount, districtProfileCount } = groupProfiles(profiles);
+
+  const homeCountry = countries[0];
+  const homeLocales = homeCountry ? (countryLocales.get(homeCountry.slug) ?? []) : [];
+  const entries: MetadataRoute.Sitemap = localizedEntries(
+    homePath,
+    homeLocales,
+    homeLocales,
+    homeCountry?.updatedAt ? new Date(homeCountry.updatedAt) : new Date(),
+  );
 
   for (const country of countries) {
-    const visible = visibleLocalesFor("country", country.status, country.title, country.intro);
+    const visible = countryLocales.get(country.slug) ?? [];
     if (visible.length === 0) continue;
-    entries.push({
-      url: absoluteUrl(countryPath(country.slug, visible[0])),
-      lastModified: new Date(country.updatedAt),
-      alternates: { languages: languageMap((l) => countryPath(country.slug, l), visible) },
-    });
+    const listed = visible.filter((locale) =>
+      isListingIndexable({
+        ...countryVisibility(country),
+        locale,
+        visibleProfileCount: countryProfileCount(country.slug, locale),
+      }),
+    );
+    if (listed.length === 0) continue;
+    entries.push(
+      ...localizedEntries(
+        (locale) => countryPath(country.slug, locale),
+        listed,
+        visible,
+        new Date(country.updatedAt),
+      ),
+    );
   }
 
   for (const district of districts) {
-    const visible = visibleLocalesFor("district", district.status, district.title, district.intro);
+    const parentVisible = countryLocales.get(district.country.slug) ?? [];
+    const visible = visibleLocalesFor(districtVisibility(district)).filter((locale) => parentVisible.includes(locale));
     if (visible.length === 0) continue;
-    entries.push({
-      url: absoluteUrl(districtPath(district.country.slug, district.slug, visible[0])),
-      lastModified: new Date(district.updatedAt),
-      alternates: {
-        languages: languageMap((l) => districtPath(district.country.slug, district.slug, l), visible),
-      },
-    });
+    const listed = visible.filter((locale) =>
+      isListingIndexable({
+        ...districtVisibility(district),
+        locale,
+        visibleProfileCount: districtProfileCount(district.country.slug, district.slug, locale),
+      }),
+    );
+    if (listed.length === 0) continue;
+    entries.push(
+      ...localizedEntries(
+        (locale) => districtPath(district.country.slug, district.slug, locale),
+        listed,
+        visible,
+        new Date(district.updatedAt),
+      ),
+    );
   }
 
   for (const profile of profiles) {
-    const visible = visibleLocalesFor(
-      "profile",
-      profile.status,
-      { en: profile.displayName, zhHantHK: profile.displayName },
-      profile.summary,
-    );
+    if (profile.seoNoIndex) continue;
+    const parentVisible = countryLocales.get(profile.country.slug) ?? [];
+    const visible = visibleLocalesFor(profileVisibility(profile)).filter((locale) => parentVisible.includes(locale));
     if (visible.length === 0) continue;
-    entries.push({
-      url: absoluteUrl(profilePath(profile.country.slug, profile.slug, visible[0])),
-      lastModified: new Date(profile.updatedAt),
-      alternates: {
-        languages: languageMap((l) => profilePath(profile.country.slug, profile.slug, l), visible),
-      },
-    });
+    entries.push(
+      ...localizedEntries(
+        (locale) => profilePath(profile.country.slug, profile.slug, locale),
+        visible,
+        visible,
+        new Date(profile.updatedAt),
+      ),
+    );
   }
 
   return entries;

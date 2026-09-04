@@ -7,19 +7,33 @@ const dictionary: Dictionary = {
     countries: "目的地",
     districts: "地區",
     profiles: "個人檔案",
+    all: "全部",
     breadcrumbHome: "首頁",
   },
-  nav: {
-    switchLanguage: "English",
+  home: {
+    heading: "探索香港",
+    intro: "按地區瀏覽、查看精選檔案，或開啟完整的香港目錄。",
+    featured: "精選檔案",
+    viewCountry: "查看所有香港檔案",
   },
   contact: {
-    telegram: "Telegram 聯絡",
-    whatsapp: "WhatsApp 聯絡",
-    telegramChannel: "加入我們的 Telegram 頻道",
+    telegram: "Telegram",
+    whatsapp: "WhatsApp",
+    telegramChannel: "Telegram 頻道",
+  },
+  listing: {
+    empty: "此處暫時沒有可顯示的檔案。",
+    emptyHint: "可以瀏覽其他地區，或稍後再回來查看。",
   },
   profile: {
     unavailableBadge: "暫時未能提供服務",
     contactAnyway: "聯絡客戶經理",
+    similar: "更多檔案",
+    speaks: "語言",
+  },
+  gallery: {
+    openPhoto: "開啟相片",
+    close: "關閉",
   },
   notFound: {
     title: "找不到頁面",

@@ -63,6 +63,51 @@ export function isVisible(input: VisibilityInput): boolean {
 }
 
 /**
+ * Every locale for which `isVisible` holds, in `i18n/config.ts` order.
+ * The one place that turns the per-locale predicate above into the
+ * locale *lists* consumed by hreflang, the sitemap, and the language
+ * switcher — so those three can never drift apart from each other or
+ * from what a page actually renders.
+ */
+export function visibleLocalesFor(input: Omit<VisibilityInput, "locale">): LocaleId[] {
+  return locales.filter((locale) => isVisible({ ...input, locale: locale.id })).map((locale) => locale.id);
+}
+
+/**
+ * Typed `VisibilityInput` builders, one per entity shape. Every page,
+ * listing, and the sitemap should build their check through these
+ * instead of assembling the `{ type, status, title, intro }` shape by
+ * hand — that hand-assembly is exactly what let listings drift from the
+ * sitemap before (see module doc comment).
+ */
+type Visibility = Omit<VisibilityInput, "locale">;
+
+export function countryVisibility(entity: { status: string; title?: LocalizedText; intro?: LocalizedText }): Visibility {
+  return { type: "country", status: entity.status, title: entity.title, intro: entity.intro };
+}
+
+export function districtVisibility(entity: { status: string; title?: LocalizedText; intro?: LocalizedText }): Visibility {
+  return { type: "district", status: entity.status, title: entity.title, intro: entity.intro };
+}
+
+/**
+ * `displayName` is not itself localized (shown as-is in both languages —
+ * see `sanity/schemaTypes/documents/profile.ts`), so it can never be the
+ * thing that makes a profile invisible in a locale; it is duplicated
+ * into both keys purely so `isVisible`'s generic title check passes
+ * whenever a real title would. The short description (`summary`) is the
+ * only field that actually gates a profile's translation.
+ */
+export function profileVisibility(entity: { status: string; displayName: string; summary?: LocalizedText }): Visibility {
+  return {
+    type: "profile",
+    status: entity.status,
+    title: { en: entity.displayName, zhHantHK: entity.displayName },
+    intro: entity.summary,
+  };
+}
+
+/**
  * Both `active` and `temporarilyUnavailable` are indexable (`index,follow`)
  * as long as they are visible; only `archived` (and incomplete
  * translations) are excluded. There is deliberately no separate
@@ -70,3 +115,32 @@ export function isVisible(input: VisibilityInput): boolean {
  * mechanism, it is a direct consequence of visibility.
  */
 export const isIndexable = isVisible;
+
+export interface ListingVisibilityInput extends VisibilityInput {
+  /**
+   * How many profiles this listing actually renders in this locale —
+   * i.e. the length of the array after `isVisible` has been applied to
+   * every candidate. Locale matters: a profile with no Chinese summary
+   * is invisible in `zh-Hant-HK`, so the same district can hold content
+   * in one locale and be empty in the other.
+   */
+  visibleProfileCount: number;
+}
+
+/**
+ * Whether a country/district listing should be indexed and advertised in
+ * the sitemap. A visible listing with zero profiles is thin content: a
+ * heading, breadcrumbs and one intro paragraph wrapped around an empty
+ * grid. It stays reachable and keeps its full hreflang set — a visitor
+ * switching language must still land on the translated URL — but Google
+ * must neither index it nor be pointed at it.
+ *
+ * This is the single predicate behind all three consumers: the `robots`
+ * directive built in `generateMetadata`, the on-page empty state, and
+ * `sitemap.ts`. Re-deriving "is this listing worth indexing" separately
+ * per consumer is precisely how a page ends up `index,follow` in its own
+ * HTML while being absent from the sitemap, or the reverse.
+ */
+export function isListingIndexable(input: ListingVisibilityInput): boolean {
+  return isVisible(input) && input.visibleProfileCount > 0;
+}

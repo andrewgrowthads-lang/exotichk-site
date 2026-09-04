@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/next";
@@ -22,6 +22,21 @@ const geistSans = Geist({
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.siteUrl),
+};
+
+/**
+ * `viewportFit: "cover"` is what makes `env(safe-area-inset-*)` resolve to
+ * anything other than `0px` on iOS. The sticky contact bar on profile
+ * pages already pads itself with `env(safe-area-inset-bottom)`; without
+ * this the padding silently collapses and the CTA — the only conversion
+ * element on the site — sits under the home indicator. The other two
+ * values restate Next.js' default so that declaring this export does not
+ * quietly drop them.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function EnglishRootLayout({ children }: { children: ReactNode }) {

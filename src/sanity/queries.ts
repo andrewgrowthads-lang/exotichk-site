@@ -1,11 +1,20 @@
 import { sanityClient } from "@/sanity/client";
-import { statusFilter } from "@/lib/visibility";
+import type { LocaleId } from "@/i18n/config";
+import { isValidPathSegment, isValidSlug } from "@/lib/slugs";
+import {
+  countryVisibility,
+  districtVisibility,
+  isVisible,
+  profileVisibility,
+  statusFilter,
+} from "@/lib/visibility";
 import type {
   CountryDetail,
   CountrySummary,
   DistrictDetail,
   DistrictSummary,
   ProfileDetail,
+  ProfileIndexEntry,
   ProfileSummary,
   SiteSettings,
 } from "@/types/content";
@@ -19,6 +28,8 @@ import type {
  */
 const CATALOG_TAG = "catalog";
 const REVALIDATE_SECONDS = 60 * 60;
+const profileRelationshipFilter =
+  "defined(country->slug.current) && defined(district->slug.current) && district->country._ref == country._ref";
 
 function fetchQuery<T>(query: string, params: Record<string, unknown> = {}): Promise<T> {
   return sanityClient.fetch<T>(query, params, {
@@ -35,12 +46,19 @@ const imageProjection = `{
   alt ${localizedTextProjection}
 }`;
 
+/** Editors see separate "main photo" and "gallery" fields; every reader
+ * gets one ordered array with the main photo first — one merge point
+ * instead of every consumer re-deriving photo order. */
+const profileImagesProjection = `"images": array::compact([mainImage, ...(gallery[])])[]${imageProjection}`;
+const profileCardImageProjection = `"images": array::compact([mainImage])[]${imageProjection}`;
+
 const countryProjection = `{
   "_id": _id,
   "slug": slug.current,
   status,
   title ${localizedTextProjection},
   intro ${localizedTextProjection},
+  body ${localizedTextProjection},
   image ${imageProjection},
   sortOrder,
   "updatedAt": _updatedAt,
@@ -54,6 +72,7 @@ const districtProjection = `{
   status,
   title ${localizedTextProjection},
   intro ${localizedTextProjection},
+  body ${localizedTextProjection},
   image ${imageProjection},
   sortOrder,
   "updatedAt": _updatedAt,
@@ -68,7 +87,9 @@ const profileSummaryProjection = `{
   status,
   displayName,
   summary ${localizedTextProjection},
-  "images": coalesce(images, [])[] ${imageProjection},
+  ${profileCardImageProjection},
+  "featured": coalesce(featured, false),
+  "seoNoIndex": coalesce(seoNoIndex, false),
   sortOrder,
   "updatedAt": _updatedAt,
   "country": country->{ "slug": slug.current },
@@ -77,20 +98,45 @@ const profileSummaryProjection = `{
 
 const profileDetailProjection = `{
   ...${profileSummaryProjection},
+  ${profileImagesProjection},
+  internalName,
   body ${localizedTextProjection},
+  age,
+  height,
+  nationality,
+  languages,
   attributes,
   seoTitle ${localizedTextProjection},
   seoDescription ${localizedTextProjection},
+  h1Override ${localizedTextProjection},
+  ogImage ${imageProjection},
   unavailableMessage ${localizedTextProjection},
   publishedAt,
   "contact": { "telegramUrl": telegramUrl, "whatsappUrl": whatsappUrl, "telegramChannelUrl": telegramChannelUrl },
 }`;
+
+const profileIndexProjection = `{
+  "_id": _id,
+  "slug": slug.current,
+  status,
+  displayName,
+  summary ${localizedTextProjection},
+  "seoNoIndex": coalesce(seoNoIndex, false),
+  "updatedAt": _updatedAt,
+  "country": country->{ "slug": slug.current },
+  "district": district->{ "slug": slug.current },
+}`;
+
+/** Featured profiles surface first within their listing; everything
+ * else follows the editor-assigned sort order. */
+const profileOrder = `order(status asc, featured desc, sortOrder asc)`;
 
 export async function getSiteSettings(): Promise<SiteSettings | null> {
   return fetchQuery<SiteSettings | null>(
     `*[_type == "siteSettings"][0]{
       agencyName,
       agencyDescription ${localizedTextProjection},
+      logo ${imageProjection},
       defaultSeoTitle ${localizedTextProjection},
       defaultSeoDescription ${localizedTextProjection},
       defaultSocialImage ${imageProjection},
@@ -106,6 +152,7 @@ export async function getCountries(): Promise<CountrySummary[]> {
 }
 
 export async function getCountryBySlug(slug: string): Promise<CountryDetail | null> {
+  if (!isValidSlug(slug)) return null;
   return fetchQuery<CountryDetail | null>(
     `*[_type == "country" && slug.current == $slug && ${statusFilter("country")}][0] ${countryProjection}`,
     { slug },
@@ -125,6 +172,7 @@ export async function getDistrictBySlug(
   countrySlug: string,
   districtSlug: string,
 ): Promise<DistrictDetail | null> {
+  if (!isValidSlug(countrySlug) || !isValidSlug(districtSlug)) return null;
   return fetchQuery<DistrictDetail | null>(
     `*[_type == "district" && slug.current == $districtSlug && country->slug.current == $countrySlug && ${statusFilter(
       "district",
@@ -135,10 +183,26 @@ export async function getDistrictBySlug(
 
 export async function getProfilesForCountry(countrySlug: string): Promise<ProfileSummary[]> {
   return fetchQuery<ProfileSummary[]>(
-    `*[_type == "profile" && country->slug.current == $countrySlug && ${statusFilter(
+    `*[_type == "profile" && country->slug.current == $countrySlug && ${profileRelationshipFilter} && ${statusFilter(
       "profile",
-    )}] | order(sortOrder asc) ${profileSummaryProjection}`,
+    )}] | ${profileOrder} ${profileSummaryProjection}`,
     { countrySlug },
+  );
+}
+
+export async function getFeaturedProfilesForCountry(
+  countrySlug: string,
+  limit = 8,
+): Promise<ProfileSummary[]> {
+  return fetchQuery<ProfileSummary[]>(
+    `*[
+      _type == "profile" &&
+      country->slug.current == $countrySlug &&
+      featured == true &&
+      ${profileRelationshipFilter} &&
+      ${statusFilter("profile")}
+    ] | ${profileOrder} [0...$limit] ${profileSummaryProjection}`,
+    { countrySlug, limit },
   );
 }
 
@@ -147,9 +211,9 @@ export async function getProfilesForDistrict(
   districtSlug: string,
 ): Promise<ProfileSummary[]> {
   return fetchQuery<ProfileSummary[]>(
-    `*[_type == "profile" && country->slug.current == $countrySlug && district->slug.current == $districtSlug && ${statusFilter(
+    `*[_type == "profile" && country->slug.current == $countrySlug && district->slug.current == $districtSlug && ${profileRelationshipFilter} && ${statusFilter(
       "profile",
-    )}] | order(sortOrder asc) ${profileSummaryProjection}`,
+    )}] | ${profileOrder} ${profileSummaryProjection}`,
     { countrySlug, districtSlug },
   );
 }
@@ -158,11 +222,28 @@ export async function getProfileBySlug(
   countrySlug: string,
   profileSlug: string,
 ): Promise<ProfileDetail | null> {
+  if (!isValidSlug(countrySlug) || !isValidPathSegment(profileSlug)) return null;
   return fetchQuery<ProfileDetail | null>(
-    `*[_type == "profile" && slug.current == $profileSlug && country->slug.current == $countrySlug && ${statusFilter(
+    `*[_type == "profile" && slug.current == $profileSlug && country->slug.current == $countrySlug && ${profileRelationshipFilter} && ${statusFilter(
       "profile",
     )}][0] ${profileDetailProjection}`,
     { countrySlug, profileSlug },
+  );
+}
+
+/** Other profiles in the same country, for the "more profiles" section
+ * on a profile page. Same country only — district is deliberately not
+ * a factor, matching how listings themselves are scoped. */
+export async function getSimilarProfiles(
+  countrySlug: string,
+  excludeProfileSlug: string,
+  limit = 4,
+): Promise<ProfileSummary[]> {
+  return fetchQuery<ProfileSummary[]>(
+    `*[_type == "profile" && country->slug.current == $countrySlug && slug.current != $excludeProfileSlug && ${profileRelationshipFilter} && ${statusFilter(
+      "profile",
+    )}] | ${profileOrder} [0...$limit] ${profileSummaryProjection}`,
+    { countrySlug, excludeProfileSlug, limit },
   );
 }
 
@@ -177,9 +258,11 @@ export async function getAllDistricts(): Promise<DistrictSummary[]> {
   );
 }
 
-export async function getAllProfiles(): Promise<ProfileSummary[]> {
-  return fetchQuery<ProfileSummary[]>(
-    `*[_type == "profile" && ${statusFilter("profile")}] | order(sortOrder asc) ${profileSummaryProjection}`,
+export async function getAllProfiles(): Promise<ProfileIndexEntry[]> {
+  return fetchQuery<ProfileIndexEntry[]>(
+    `*[_type == "profile" && ${profileRelationshipFilter} && ${statusFilter(
+      "profile",
+    )}] | ${profileOrder} ${profileIndexProjection}`,
   );
 }
 
@@ -201,17 +284,35 @@ async function safely<T>(fn: () => Promise<T[]>): Promise<T[]> {
   }
 }
 
-export async function getCountryStaticParams(): Promise<{ country: string }[]> {
+export async function getCountryStaticParams(locale: LocaleId): Promise<{ country: string }[]> {
   const countries = await safely(getAllCountries);
-  return countries.map((country) => ({ country: country.slug }));
+  return countries
+    .filter((country) => isVisible({ ...countryVisibility(country), locale }))
+    .map((country) => ({ country: country.slug }));
 }
 
-export async function getDistrictStaticParams(): Promise<{ country: string; district: string }[]> {
-  const districts = await safely(getAllDistricts);
-  return districts.map((district) => ({ country: district.country.slug, district: district.slug }));
+export async function getDistrictStaticParams(locale: LocaleId): Promise<{ country: string; district: string }[]> {
+  const [countries, districts] = await Promise.all([safely(getAllCountries), safely(getAllDistricts)]);
+  const visibleCountries = new Set(
+    countries.filter((country) => isVisible({ ...countryVisibility(country), locale })).map((country) => country.slug),
+  );
+  return districts
+    .filter(
+      (district) =>
+        visibleCountries.has(district.country.slug) && isVisible({ ...districtVisibility(district), locale }),
+    )
+    .map((district) => ({ country: district.country.slug, district: district.slug }));
 }
 
-export async function getProfileStaticParams(): Promise<{ country: string; profile: string }[]> {
-  const profiles = await safely(getAllProfiles);
-  return profiles.map((item) => ({ country: item.country.slug, profile: item.slug }));
+export async function getProfileStaticParams(locale: LocaleId): Promise<{ country: string; profile: string }[]> {
+  const [countries, profiles] = await Promise.all([safely(getAllCountries), safely(getAllProfiles)]);
+  const visibleCountries = new Set(
+    countries.filter((country) => isVisible({ ...countryVisibility(country), locale })).map((country) => country.slug),
+  );
+  return profiles
+    .filter(
+      (profile) =>
+        visibleCountries.has(profile.country.slug) && isVisible({ ...profileVisibility(profile), locale }),
+    )
+    .map((profile) => ({ country: profile.country.slug, profile: profile.slug }));
 }

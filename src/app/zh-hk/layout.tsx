@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -18,6 +18,13 @@ import "@/app/globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.siteUrl),
+};
+
+/** See `app/(en)/layout.tsx` — each root layout owns its own viewport, and both locales serve the same sticky CTA. */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 const CJK_SYSTEM_FONT_STACK =

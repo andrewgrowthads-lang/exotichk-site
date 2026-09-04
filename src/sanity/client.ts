@@ -1,3 +1,4 @@
+import "server-only";
 import { createClient } from "@sanity/client";
 import { env } from "@/lib/env";
 
