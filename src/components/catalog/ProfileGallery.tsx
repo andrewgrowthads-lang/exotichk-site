@@ -95,7 +95,11 @@ export function ProfileGallery({
             type="button"
             onClick={() => setOpenIndex(null)}
             aria-label={dictionary.gallery.close}
-            className="absolute top-3 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-2xl leading-none text-white"
+            // The overlay is `fixed`, so it sits outside the safe-area padding
+            // `body` carries. Under `viewportFit: "cover"` that would put the
+            // only way out of the fullscreen viewer behind the notch in
+            // landscape.
+            className="absolute top-3 right-[max(0.75rem,env(safe-area-inset-right))] z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-2xl leading-none text-white"
           >
             ×
           </button>
