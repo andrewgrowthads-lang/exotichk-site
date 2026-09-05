@@ -1,6 +1,7 @@
 import { defineConfig } from "sanity";
 import { structureTool } from "sanity/structure";
 import { GenerateChineseAction } from "@/sanity/actions/generateChinese";
+import { PublishEnglishOnlyAction, PublishProfileAction } from "@/sanity/actions/publishProfile";
 import { schemaTypes } from "@/sanity/schemaTypes";
 
 /**
@@ -37,7 +38,10 @@ export default defineConfig({
     types: schemaTypes,
   },
   document: {
-    actions: (previous, context) =>
-      context.schemaType === "profile" ? [GenerateChineseAction, ...previous] : previous,
+    actions: (previous, context) => {
+      if (context.schemaType !== "profile") return previous;
+      const rest = previous.filter((action) => action.action !== "publish");
+      return [PublishProfileAction, PublishEnglishOnlyAction, GenerateChineseAction, ...rest];
+    },
   },
 });

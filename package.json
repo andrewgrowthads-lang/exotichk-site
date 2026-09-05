@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "sanity:dev": "sanity dev",
     "sanity:build": "sanity build",
-    "sanity:deploy": "sanity deploy"
+    "sanity:deploy": "sanity deploy",
+    "profiles:import": "sanity exec scripts/import-profiles.ts --with-user-token --"
   },
   "dependencies": {
     "@sanity/client": "^8.4.0",
@@ -27,6 +28,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "csv-parse": "^7.0.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "sanity": "^6.12.0",

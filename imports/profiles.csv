@@ -1,0 +1,2 @@
+display_name,country,district,status,age,height,nationality,languages,price_hkd,summary_en,description_en,featured,sort_order,image_folder
+Sample,Hong Kong,TST,active,23,170,Russia,"English,Russian",1500,"One or two English sentences under the name.","Optional longer English description. Commas, like this, stay in one field.",false,0,sample

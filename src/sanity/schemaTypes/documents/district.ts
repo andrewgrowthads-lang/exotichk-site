@@ -63,6 +63,6 @@ export const district = defineType({
     defineField({ name: "sortOrder", title: "Sort order", type: "number", initialValue: 0 }),
   ],
   preview: {
-    select: { title: "internalName", subtitle: "status", media: "image" },
+    select: { title: "title.en", subtitle: "internalName", media: "image" },
   },
 });

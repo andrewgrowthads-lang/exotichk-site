@@ -46,3 +46,9 @@ next-env.d.ts
 # generated agent stubs from Next.js
 /AGENTS.md
 /CLAUDE.md
+
+# Local catalogue import photos (keep the CSV template)
+imports/**/*.jpg
+imports/**/*.jpeg
+imports/**/*.png
+imports/**/*.webp
