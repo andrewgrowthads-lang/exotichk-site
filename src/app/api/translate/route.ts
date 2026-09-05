@@ -1,18 +1,18 @@
 import "server-only";
 import { NextResponse, type NextRequest } from "next/server";
-import { env } from "@/lib/env";
+import {
+  applyStudioCors,
+  bearerToken,
+  json,
+  rejectStudioOrigin,
+  verifySanityEditor,
+} from "@/lib/studioHttp";
 import {
   TRANSLATABLE_FIELDS,
   TRANSLATION_MAX_BODY_BYTES,
   TRANSLATION_MAX_FIELD_CHARS,
   type TranslatableField,
 } from "@/sanity/lib/translationFields";
-
-const STUDIO_ORIGINS = new Set([
-  "https://exotichk-admin.sanity.studio",
-  "http://localhost:3333",
-  "http://127.0.0.1:3333",
-]);
 
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const RATE_LIMIT_PER_USER = 10;
@@ -22,61 +22,71 @@ const hits = new Map<string, number[]>();
 type FieldMap = Partial<Record<TranslatableField, string>>;
 
 export function OPTIONS(request: NextRequest): NextResponse {
-  return cors(request, new NextResponse(null, { status: 204 }));
+  return applyStudioCors(request, new NextResponse(null, { status: 204 }));
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const originError = rejectOrigin(request);
+  const originError = rejectStudioOrigin(request);
   if (originError) return originError;
 
   const lengthHeader = request.headers.get("content-length");
   if (lengthHeader && Number(lengthHeader) > TRANSLATION_MAX_BODY_BYTES) {
-    return cors(request, json({ error: "Payload too large." }, 413));
+    return applyStudioCors(request, json({ error: "Payload too large." }, 413));
   }
 
   const token = bearerToken(request.headers.get("authorization"));
   if (!token) {
-    return cors(request, json({ error: "Unauthorized." }, 401));
+    return applyStudioCors(request, json({ error: "Unauthorized." }, 401));
   }
 
   const actor = await verifySanityEditor(token);
   if (!actor) {
-    return cors(request, json({ error: "Unauthorized." }, 401));
+    return applyStudioCors(request, json({ error: "Unauthorized." }, 401));
   }
 
   if (!allow(actor.id) || !allow("global", RATE_LIMIT_GLOBAL)) {
-    return cors(request, json({ error: "Too many translation requests. Try again later." }, 429));
+    return applyStudioCors(request, json({ error: "Too many translation requests. Try again later." }, 429));
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    return cors(request, json({ error: "Translation is not configured." }, 503));
+    return applyStudioCors(request, json({ error: "Translation is not configured." }, 503));
   }
 
   let payload: unknown;
   try {
     const raw = await request.text();
     if (raw.length > TRANSLATION_MAX_BODY_BYTES) {
-      return cors(request, json({ error: "Payload too large." }, 413));
+      return applyStudioCors(request, json({ error: "Payload too large." }, 413));
     }
     payload = JSON.parse(raw) as unknown;
   } catch {
-    return cors(request, json({ error: "Invalid JSON." }, 400));
+    return applyStudioCors(request, json({ error: "Invalid JSON." }, 400));
   }
 
   const fields = parseFields(payload);
   if (!fields) {
-    return cors(request, json({ error: "Send only allowed English text fields." }, 400));
+    return applyStudioCors(request, json({ error: "Send only allowed English text fields." }, 400));
   }
   if (Object.keys(fields).length === 0) {
-    return cors(request, json({ error: "Nothing to translate." }, 400));
+    return applyStudioCors(request, json({ error: "Nothing to translate." }, 400));
   }
 
   try {
     const translated = await translateFields(apiKey, fields);
-    return cors(request, json({ fields: translated }, 200));
-  } catch {
-    return cors(request, json({ error: "Translation failed." }, 502));
+    return applyStudioCors(request, json({ fields: translated }, 200));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message === "provider_quota") {
+      return applyStudioCors(request, json({ error: "OpenAI has no credits left. Add billing and retry." }, 503));
+    }
+    if (message === "provider_unauthorized") {
+      return applyStudioCors(
+        request,
+        json({ error: "The OpenAI key was rejected. Update OPENAI_API_KEY and retry." }, 503),
+      );
+    }
+    return applyStudioCors(request, json({ error: "Translation failed." }, 502));
   }
 }
 
@@ -103,35 +113,6 @@ function methodNotAllowed(): NextResponse {
   );
 }
 
-function json(body: Record<string, unknown>, status: number): NextResponse {
-  return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
-}
-
-function cors(request: NextRequest, response: NextResponse): NextResponse {
-  const origin = request.headers.get("origin");
-  if (origin && STUDIO_ORIGINS.has(origin)) {
-    response.headers.set("Access-Control-Allow-Origin", origin);
-    response.headers.set("Vary", "Origin");
-    response.headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
-    response.headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-    response.headers.set("Access-Control-Max-Age", "600");
-  }
-  return response;
-}
-
-function rejectOrigin(request: NextRequest): NextResponse | null {
-  const origin = request.headers.get("origin");
-  if (!origin) return cors(request, json({ error: "Origin required." }, 403));
-  if (!STUDIO_ORIGINS.has(origin)) return cors(request, json({ error: "Origin not allowed." }, 403));
-  return null;
-}
-
-function bearerToken(header: string | null): string | undefined {
-  if (!header || !header.startsWith("Bearer ")) return undefined;
-  const token = header.slice("Bearer ".length).trim();
-  return token || undefined;
-}
-
 function allow(key: string, limit = RATE_LIMIT_PER_USER): boolean {
   const now = Date.now();
   const stamps = (hits.get(key) ?? []).filter((stamp) => now - stamp < RATE_LIMIT_WINDOW_MS);
@@ -142,23 +123,6 @@ function allow(key: string, limit = RATE_LIMIT_PER_USER): boolean {
   stamps.push(now);
   hits.set(key, stamps);
   return true;
-}
-
-async function verifySanityEditor(token: string): Promise<{ id: string } | null> {
-  const me = await fetch(`https://${env.sanityProjectId}.api.sanity.io/v${env.sanityApiVersion}/users/me`, {
-    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-    cache: "no-store",
-  });
-  if (!me.ok) return null;
-  const body = (await me.json()) as { id?: string; isRobot?: boolean };
-  if (!body.id || body.isRobot) return null;
-
-  const project = await fetch(`https://api.sanity.io/v${env.sanityApiVersion}/projects/${env.sanityProjectId}`, {
-    headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-    cache: "no-store",
-  });
-  if (!project.ok) return null;
-  return { id: body.id };
 }
 
 function parseFields(payload: unknown): FieldMap | null {
@@ -207,6 +171,16 @@ async function translateFields(apiKey: string, fields: FieldMap): Promise<FieldM
     }),
   });
   if (!response.ok) {
+    const details = (await response.json().catch(() => null)) as
+      | { error?: { code?: string; type?: string } }
+      | null;
+    const code = details?.error?.code || details?.error?.type || "";
+    if (response.status === 401 || response.status === 403) {
+      throw new Error("provider_unauthorized");
+    }
+    if (response.status === 429 || code.includes("insufficient_quota") || code.includes("credit_balance")) {
+      throw new Error("provider_quota");
+    }
     throw new Error("provider_error");
   }
   const body = (await response.json()) as {

@@ -17,7 +17,7 @@ export default function NotFound() {
   return (
     <PageShell locale={LOCALE} dictionary={dictionary}>
       <CatalogFrame>
-        <div className="flex flex-col items-center py-16 text-center">
+        <div className="mt-8 flex flex-col items-center rounded-2xl border border-[var(--accent)]/18 bg-black/40 px-6 py-16 text-center shadow-[0_0_40px_rgba(255,45,138,0.08)] backdrop-blur-md">
           <h1 className="text-[22px] font-medium tracking-tight text-white">{dictionary.notFound.title}</h1>
           <p className="mt-2 text-[14px] text-[var(--muted)]">{dictionary.notFound.description}</p>
           <Link

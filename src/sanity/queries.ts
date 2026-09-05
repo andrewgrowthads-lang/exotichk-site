@@ -25,9 +25,10 @@ import type {
  * and a real gap: a profile moved between districts still needs *both*
  * the old and new listings invalidated, and the webhook payload has no
  * memory of the old district. One shared tag sidesteps that entirely.
+ * Publish expires the tag immediately; the window below is a fallback.
  */
 const CATALOG_TAG = "catalog";
-const REVALIDATE_SECONDS = 60 * 60;
+const REVALIDATE_SECONDS = 30;
 const profileRelationshipFilter =
   "defined(country->slug.current) && defined(district->slug.current) && district->country._ref == country._ref";
 

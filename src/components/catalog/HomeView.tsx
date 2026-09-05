@@ -39,6 +39,7 @@ export function HomeView({
       dictionary={dictionary}
       alternateHref={alternateHref}
       activeCountrySlug={country.slug}
+      atmosphereImage={country.image}
     >
       <JsonLd
         data={organizationJsonLd({
@@ -59,7 +60,6 @@ export function HomeView({
       <CatalogHero
         locationTitle={countryTitle}
         tagline={dictionary.common.tagline}
-        image={country.image}
         locale={locale}
         locationAs="p"
         showFlag={country.slug === "hong-kong"}
@@ -75,12 +75,12 @@ export function HomeView({
           <ProfileGrid profiles={profiles} locale={locale} dictionary={dictionary} priorityFirst />
         </div>
         {pickLocalizedText(country.intro, locale) && (
-          <p className="mt-10 max-w-2xl text-[13px] leading-relaxed text-[var(--muted)]">
+          <p className="mt-10 max-w-2xl text-[13px] leading-relaxed text-[var(--muted)] [text-shadow:0_1px_14px_rgba(0,0,0,0.85)]">
             {pickLocalizedText(country.intro, locale)}
           </p>
         )}
         {pickLocalizedText(country.body, locale) && (
-          <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[var(--muted)]">
+          <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[var(--muted)] [text-shadow:0_1px_14px_rgba(0,0,0,0.85)]">
             {pickLocalizedText(country.body, locale)}
           </p>
         )}

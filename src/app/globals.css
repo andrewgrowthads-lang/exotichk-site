@@ -18,6 +18,7 @@
 
 html {
   height: 100%;
+  overflow-x: clip;
   background: var(--background);
 }
 
@@ -54,20 +55,47 @@ body::after {
   mix-blend-mode: overlay;
 }
 
-.catalog-skyline-overlay {
+/*
+ * Fixed, viewport-covering Hong Kong night layer (see SiteAtmosphere).
+ * Cover-crop the photo; darken it in CSS so the city stays atmospheric
+ * without a hard edge into flat black as the page grows.
+ */
+.site-atmosphere {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.site-atmosphere__overlay {
+  position: absolute;
+  inset: 0;
   background-image:
     linear-gradient(
       to bottom,
-      rgba(12, 4, 16, 0.34) 0%,
-      rgba(16, 6, 20, 0.38) 18%,
-      rgba(12, 5, 18, 0.46) 42%,
-      rgba(8, 4, 14, 0.58) 64%,
-      rgba(5, 3, 8, 0.82) 82%,
-      rgba(5, 3, 8, 0.96) 93%,
-      var(--background) 100%
+      rgba(6, 2, 10, 0.66) 0%,
+      rgba(6, 2, 10, 0.7) 32%,
+      rgba(5, 3, 8, 0.78) 62%,
+      rgba(5, 3, 8, 0.86) 100%
     ),
-    radial-gradient(ellipse 85% 60% at 78% 18%, rgba(255, 45, 138, 0.22), transparent 62%),
-    radial-gradient(ellipse 70% 55% at 6% 62%, rgba(92, 18, 78, 0.42), transparent 64%);
+    radial-gradient(ellipse 90% 55% at 82% 8%, rgba(255, 45, 138, 0.2), transparent 58%),
+    radial-gradient(ellipse 70% 50% at 6% 72%, rgba(92, 18, 78, 0.4), transparent 62%),
+    radial-gradient(ellipse 55% 40% at 50% 100%, rgba(48, 12, 58, 0.5), transparent 70%);
+}
+
+.site-atmosphere--profile .site-atmosphere__overlay {
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(5, 2, 9, 0.76) 0%,
+      rgba(5, 2, 9, 0.8) 36%,
+      rgba(5, 3, 8, 0.86) 68%,
+      rgba(5, 3, 8, 0.9) 100%
+    ),
+    radial-gradient(ellipse 80% 50% at 78% 10%, rgba(255, 45, 138, 0.14), transparent 56%),
+    radial-gradient(ellipse 65% 48% at 8% 70%, rgba(92, 18, 78, 0.36), transparent 62%),
+    radial-gradient(ellipse 50% 38% at 50% 100%, rgba(36, 8, 42, 0.48), transparent 70%);
 }
 
 .hide-scrollbar {

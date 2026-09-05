@@ -17,7 +17,7 @@ import Link from "next/link";
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-[var(--line)] py-2.5 text-[14px]">
+    <div className="flex items-baseline justify-between gap-4 border-b border-[var(--accent)]/15 py-2.5 text-[14px]">
       <span className="text-[var(--muted)]">{label}</span>
       <span className="text-white">{value}</span>
     </div>
@@ -69,7 +69,7 @@ export function ProfileView({
   };
 
   return (
-    <PageShell locale={locale} dictionary={dictionary} alternateHref={alternateHref} footer={similar.length === 0} activeCountrySlug={country.slug}>
+    <PageShell locale={locale} dictionary={dictionary} alternateHref={alternateHref} footer={similar.length === 0} activeCountrySlug={country.slug} atmosphereImage={country.image} atmosphereIntensity="profile">
       <ProfileViewTracker {...analyticsContext} />
       <JsonLd
         data={breadcrumbJsonLd(breadcrumbs.map((item) => ({ name: item.label, url: absoluteUrl(item.href) })))}
@@ -87,8 +87,9 @@ export function ProfileView({
       <div className="md:grid md:grid-cols-2 md:items-start md:gap-10 lg:gap-14">
         <ProfileGallery photos={photos} locale={locale} displayName={profile.displayName} dictionary={dictionary} />
 
-        <div className="mt-5 md:mt-0">
+        <div className="relative mt-5 rounded-2xl border border-[var(--accent)]/18 bg-black/45 p-4 shadow-[0_12px_48px_rgba(0,0,0,0.45),0_0_48px_rgba(255,45,138,0.1)] backdrop-blur-md sm:p-5 md:mt-0 md:p-6 lg:p-8">
           <h1 className="text-[32px] leading-none font-semibold tracking-tight text-white sm:text-[40px]">{h1}</h1>
+          <span className="mt-3 block h-px w-16 bg-[var(--accent)]/80 shadow-[0_0_12px_var(--accent)]" aria-hidden="true" />
           <p className="mt-3 text-[14px] text-[var(--muted)]">
             <Link href={countryPath(country.slug, locale)} className="text-[var(--accent-soft)] underline-offset-2 hover:underline">
               {countryTitle}
@@ -102,7 +103,7 @@ export function ProfileView({
             </Link>
           </p>
           {profile.status === "temporarilyUnavailable" && (
-            <div className="mt-3 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-[13px] text-[var(--muted)]">
+            <div className="mt-3 rounded-lg border border-[var(--accent)]/20 bg-black/35 px-3 py-2 text-[13px] text-[var(--muted)]">
               <p className="font-medium text-[var(--foreground)]">{dictionary.profile.unavailableBadge}</p>
               <p className="mt-0.5">
                 {pickLocalizedText(profile.unavailableMessage, locale) || dictionary.profile.contactAnyway}
@@ -131,7 +132,7 @@ export function ProfileView({
               {attributes.map((value) => (
                 <span
                   key={value}
-                  className="rounded-md border border-[var(--line)] bg-[var(--surface)] px-2.5 py-1 text-[11px] text-[var(--muted)]"
+                  className="rounded-md border border-[var(--accent)]/20 bg-black/30 px-2.5 py-1 text-[11px] text-[var(--muted)]"
                 >
                   {value}
                 </span>
@@ -139,7 +140,7 @@ export function ProfileView({
             </div>
           )}
 
-          <div className="mt-6">
+          <div className="mt-6 rounded-xl border border-[var(--accent)]/22 bg-black/25 p-3 shadow-[0_0_36px_rgba(255,45,138,0.12)]">
             <ContactButtons
               contact={contact}
               context={analyticsContext}
@@ -160,7 +161,7 @@ export function ProfileView({
 
       {similar.length > 0 && (
         <section className="mt-12 md:mb-8">
-          <h2 className="mb-4 text-[16px] font-medium text-white">{dictionary.profile.similar}</h2>
+          <h2 className="mb-4 text-[16px] font-medium text-white [text-shadow:0_1px_14px_rgba(0,0,0,0.85)]">{dictionary.profile.similar}</h2>
           <ProfileGrid profiles={similar} locale={locale} dictionary={dictionary} />
         </section>
       )}

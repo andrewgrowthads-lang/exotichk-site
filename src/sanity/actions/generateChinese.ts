@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { type DocumentActionComponent, useClient, useDocumentOperation } from "sanity";
+import { resolveStudioToken } from "@/sanity/lib/studioToken";
 import {
   collectEnglish,
   hasManualChinese,
@@ -36,17 +37,13 @@ export function GenerateChineseAction(
           if (!ok) return;
         }
 
-        const token = client.config().token;
+        const token = await resolveStudioToken(client);
         if (!token) {
           window.alert("Could not read the Sanity session. Sign in again and retry.");
           return;
         }
 
-        const result = await requestTranslation(
-          process.env.SANITY_STUDIO_SITE_URL || "http://localhost:3000",
-          token,
-          english,
-        );
+        const result = await requestTranslation(token, english);
         if (!result.ok) {
           window.alert(result.error || "Translation failed. English and existing Chinese were not changed.");
           return;

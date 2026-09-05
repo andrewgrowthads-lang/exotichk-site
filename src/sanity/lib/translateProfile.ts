@@ -1,4 +1,5 @@
 import { sha256Hex } from "@/sanity/lib/sha256Hex";
+import { canHostedStudioReach, studioTranslateOrigin, translateApiUrl } from "@/sanity/lib/studioSiteUrl";
 import { TRANSLATABLE_FIELDS, type TranslatableField } from "@/sanity/lib/translationFields";
 
 export type Localized = { en?: string; zhHantHK?: string };
@@ -68,23 +69,37 @@ function zhSource(doc: TranslatableProfile, key: TranslatableField): Localized |
 }
 
 export async function requestTranslation(
-  siteUrl: string,
   token: string,
   fields: Partial<Record<TranslatableField, string>>,
+  siteUrl = studioTranslateOrigin(),
 ): Promise<{ ok: true; fields: Record<string, string> } | { ok: false; status: number; error: string }> {
-  const response = await fetch(`${siteUrl.replace(/\/$/, "")}/api/translate`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ fields }),
-  });
-  const result = (await response.json().catch(() => null)) as { fields?: Record<string, string>; error?: string } | null;
-  if (!response.ok || !result?.fields) {
-    return { ok: false, status: response.status, error: result?.error || "Translation failed." };
+  const origin = siteUrl.replace(/\/$/, "");
+  if (!canHostedStudioReach(origin)) {
+    return {
+      ok: false,
+      status: 503,
+      error: "Translation is unavailable from hosted Studio. Use “Publish English only”.",
+    };
   }
-  return { ok: true, fields: result.fields };
+  try {
+    const response = await fetch(translateApiUrl(origin), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ fields }),
+    });
+    const result = (await response.json().catch(() => null)) as
+      | { fields?: Record<string, string>; error?: string }
+      | null;
+    if (!response.ok || !result?.fields) {
+      return { ok: false, status: response.status, error: result?.error || "Translation failed." };
+    }
+    return { ok: true, fields: result.fields };
+  } catch {
+    return { ok: false, status: 0, error: "Could not reach the translation service." };
+  }
 }
 
 export async function translationPatch(

@@ -27,7 +27,7 @@ export async function CountryNav({
         const current = country.slug === activeCountrySlug;
         const className = `flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-medium tracking-[0.14em] uppercase transition-colors sm:px-2.5 ${
           current
-            ? "bg-[var(--surface-2)] text-white shadow-[0_0_16px_rgba(255,45,138,0.28)] ring-1 ring-[var(--accent)]/70"
+            ? "bg-black/40 text-white shadow-[0_0_16px_rgba(255,45,138,0.28)] ring-1 ring-[var(--accent)]/70 backdrop-blur-sm"
             : "text-[var(--muted)] hover:text-white hover:ring-1 hover:ring-[var(--accent)]/35"
         }`;
         const label = (

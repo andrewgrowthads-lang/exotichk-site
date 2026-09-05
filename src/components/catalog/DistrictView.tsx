@@ -37,14 +37,13 @@ export function DistrictView({
   ];
 
   return (
-    <PageShell locale={locale} dictionary={dictionary} alternateHref={alternateHref} activeCountrySlug={country.slug}>
+    <PageShell locale={locale} dictionary={dictionary} alternateHref={alternateHref} activeCountrySlug={country.slug} atmosphereImage={country.image}>
       <JsonLd
         data={breadcrumbJsonLd(breadcrumbs.map((item) => ({ name: item.label, url: absoluteUrl(item.href) })))}
       />
       <CatalogHero
         locationTitle={countryTitle}
         contextLine={districtLine}
-        image={district.image ?? country.image}
         locale={locale}
         locationAs="p"
         contextAs="h1"
@@ -61,11 +60,11 @@ export function DistrictView({
         <div className="mt-3 sm:mt-3.5">
           <ProfileGrid profiles={profiles} locale={locale} dictionary={dictionary} hideDistrict priorityFirst />
         </div>
-        <p className="mt-10 max-w-2xl text-[13px] leading-relaxed text-[var(--muted)]">
+        <p className="mt-10 max-w-2xl text-[13px] leading-relaxed text-[var(--muted)] [text-shadow:0_1px_14px_rgba(0,0,0,0.85)]">
           {pickLocalizedText(district.intro, locale)}
         </p>
         {pickLocalizedText(district.body, locale) && (
-          <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[var(--muted)]">
+          <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-[var(--muted)] [text-shadow:0_1px_14px_rgba(0,0,0,0.85)]">
             {pickLocalizedText(district.body, locale)}
           </p>
         )}

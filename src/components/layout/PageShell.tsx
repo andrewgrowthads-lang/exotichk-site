@@ -5,6 +5,8 @@ import type { Dictionary } from "@/i18n/dictionaries";
 import { homePath } from "@/lib/urls";
 import { CatalogFrame } from "@/components/layout/CatalogFrame";
 import { CountryNav } from "@/components/layout/CountryNav";
+import { SiteAtmosphere, type AtmosphereIntensity } from "@/components/layout/SiteAtmosphere";
+import type { SanityImage } from "@/types/content";
 
 /**
  * "EN | 中文" toggle: the current locale is plain text (nothing to click
@@ -55,6 +57,8 @@ export function PageShell({
   children,
   footer = true,
   activeCountrySlug,
+  atmosphereImage,
+  atmosphereIntensity = "catalog",
 }: {
   locale: LocaleId;
   dictionary: Dictionary;
@@ -62,40 +66,45 @@ export function PageShell({
   children: ReactNode;
   footer?: boolean;
   activeCountrySlug?: string;
+  atmosphereImage?: SanityImage;
+  atmosphereIntensity?: AtmosphereIntensity;
 }) {
   return (
-    <div className="relative z-10 flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-30 border-b border-[var(--accent)]/28 bg-[var(--background)]/78 backdrop-blur-md">
-        <CatalogFrame className="flex h-12 items-center justify-between gap-3 sm:h-[3.25rem]">
-          <Link
-            href={homePath(locale)}
-            className="shrink-0 text-[13px] font-semibold tracking-[0.22em] uppercase sm:text-[14px]"
-            aria-label={dictionary.common.siteName}
-          >
-            <span className="text-white">Exotic</span>
-            <span className="text-[var(--accent)]">HK</span>
-          </Link>
-          <div className="flex min-w-0 items-center justify-end gap-3 sm:gap-5">
-            <Suspense fallback={<span className="min-h-[1em]" />}>
-              <CountryNav locale={locale} dictionary={dictionary} activeCountrySlug={activeCountrySlug} />
-            </Suspense>
-            <LanguageSwitcher locale={locale} alternateHref={alternateHref} />
-          </div>
-        </CatalogFrame>
-      </header>
-      <main className="flex-1">{children}</main>
-      {footer && (
-        <footer className="mt-auto border-t border-[var(--line)] py-6">
-          <CatalogFrame className="flex items-center justify-between gap-3 text-[12px] text-[var(--muted)]">
-            <p>
-              © {new Date().getFullYear()} {dictionary.common.siteName}
-            </p>
-            <p className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--accent)]/50 text-[10px] tracking-wide text-[var(--accent-soft)]">
-              {dictionary.common.adultsOnly}
-            </p>
+    <>
+      <SiteAtmosphere image={atmosphereImage} intensity={atmosphereIntensity} />
+      <div className="relative z-10 flex min-h-dvh flex-col">
+        <header className="sticky top-0 z-30 border-b border-[var(--accent)]/22 bg-[var(--background)]/55 backdrop-blur-md">
+          <CatalogFrame className="flex h-12 items-center justify-between gap-3 sm:h-[3.25rem]">
+            <Link
+              href={homePath(locale)}
+              className="shrink-0 text-[13px] font-semibold tracking-[0.22em] uppercase sm:text-[14px]"
+              aria-label={dictionary.common.siteName}
+            >
+              <span className="text-white">Exotic</span>
+              <span className="text-[var(--accent)]">HK</span>
+            </Link>
+            <div className="flex min-w-0 items-center justify-end gap-3 sm:gap-5">
+              <Suspense fallback={<span className="min-h-[1em]" />}>
+                <CountryNav locale={locale} dictionary={dictionary} activeCountrySlug={activeCountrySlug} />
+              </Suspense>
+              <LanguageSwitcher locale={locale} alternateHref={alternateHref} />
+            </div>
           </CatalogFrame>
-        </footer>
-      )}
-    </div>
+        </header>
+        <main className="flex-1">{children}</main>
+        {footer && (
+          <footer className="mt-auto border-t border-[var(--accent)]/18 bg-[var(--background)]/30 py-6 backdrop-blur-sm">
+            <CatalogFrame className="flex items-center justify-between gap-3 text-[12px] text-[var(--muted)]">
+              <p>
+                © {new Date().getFullYear()} {dictionary.common.siteName}
+              </p>
+              <p className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--accent)]/50 text-[10px] tracking-wide text-[var(--accent-soft)]">
+                {dictionary.common.adultsOnly}
+              </p>
+            </CatalogFrame>
+          </footer>
+        )}
+      </div>
+    </>
   );
 }
