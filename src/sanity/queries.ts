@@ -97,6 +97,7 @@ const profileSummaryProjection = `{
   age,
   height,
   nationality,
+  price,
 }`;
 
 const profileDetailProjection = `{

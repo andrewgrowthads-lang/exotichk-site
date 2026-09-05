@@ -1,5 +1,6 @@
 import type { LocaleId } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
+import { formatHkd } from "@/lib/formatPrice";
 import { localizeAttribute, localizeLanguage, localizeNationality, pickLocalizedText } from "@/lib/localize";
 import { absoluteUrl, countryPath, districtPath, homePath, profilePath } from "@/lib/urls";
 import { hasDirectContact } from "@/lib/contact";
@@ -53,6 +54,7 @@ export function ProfileView({
   ];
   const languages = (profile.languages ?? []).map((value) => localizeLanguage(value, locale));
   const attributes = (profile.attributes ?? []).map((value) => localizeAttribute(value, locale));
+  const price = formatHkd(profile.price);
   // No WhatsApp and no Telegram means the sticky bar would render as an
   // empty strip pinned across the bottom of the screen, with `pb-24`
   // reserving room for it. Both are therefore conditional on the same flag.
@@ -108,13 +110,14 @@ export function ProfileView({
             </div>
           )}
 
-          {(profile.age || profile.height || profile.nationality) && (
+          {(profile.age || profile.height || profile.nationality || price) && (
             <div className="mt-5">
               {profile.age ? <Fact label={dictionary.profile.age} value={String(profile.age)} /> : null}
               {profile.height ? <Fact label={dictionary.profile.height} value={`${profile.height} cm`} /> : null}
               {profile.nationality ? (
                 <Fact label={dictionary.profile.nationality} value={localizeNationality(profile.nationality, locale)} />
               ) : null}
+              {price ? <Fact label={dictionary.profile.price} value={price} /> : null}
             </div>
           )}
 

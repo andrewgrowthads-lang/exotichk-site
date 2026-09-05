@@ -90,6 +90,14 @@ export const profile = defineType({
       validation: (rule) => rule.integer().min(100).max(220),
     }),
     defineField({
+      name: "price",
+      title: "Price (HKD)",
+      description: "One price in Hong Kong dollars. Shown on the card as HK$ 1500. Enter digits only — do not type HK$.",
+      type: "number",
+      group: "basic",
+      validation: (rule) => rule.integer().min(1).max(999999),
+    }),
+    defineField({
       name: "nationality",
       title: "Nationality",
       type: "string",

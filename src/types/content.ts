@@ -80,6 +80,8 @@ export interface ProfileSummary {
   age?: number;
   height?: number;
   nationality?: string;
+  /** Numeric HKD amount. Formatted on the site as `HK$ 1500`. */
+  price?: number;
 }
 
 /** Minimal profile shape used by sitemap and static-param generation. */

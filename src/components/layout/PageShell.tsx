@@ -65,7 +65,7 @@ export function PageShell({
 }) {
   return (
     <div className="relative z-10 flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-30 border-b border-[var(--accent)]/18 bg-[var(--background)]/78 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-[var(--accent)]/28 bg-[var(--background)]/78 backdrop-blur-md">
         <CatalogFrame className="flex h-12 items-center justify-between gap-3 sm:h-[3.25rem]">
           <Link
             href={homePath(locale)}

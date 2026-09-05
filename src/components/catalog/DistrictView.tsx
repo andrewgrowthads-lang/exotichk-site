@@ -1,10 +1,10 @@
 import type { LocaleId } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
+import { districtExpandedLabel } from "@/lib/districtLabels";
 import { pickLocalizedText } from "@/lib/localize";
 import { CatalogHero } from "@/components/catalog/CatalogHero";
 import { DistrictChips } from "@/components/catalog/DistrictChips";
 import { ProfileGrid } from "@/components/catalog/ProfileGrid";
-import { CatalogFrame } from "@/components/layout/CatalogFrame";
 import { PageShell } from "@/components/layout/PageShell";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
 import { absoluteUrl, countryPath, districtPath, homePath } from "@/lib/urls";
@@ -29,6 +29,7 @@ export function DistrictView({
 }) {
   const countryTitle = pickLocalizedText(country.title, locale);
   const districtTitle = pickLocalizedText(district.title, locale);
+  const districtLine = districtExpandedLabel(district.slug, districtTitle);
   const breadcrumbs = [
     { label: dictionary.common.home, href: homePath(locale) },
     { label: countryTitle, href: countryPath(country.slug, locale) },
@@ -41,12 +42,14 @@ export function DistrictView({
         data={breadcrumbJsonLd(breadcrumbs.map((item) => ({ name: item.label, url: absoluteUrl(item.href) })))}
       />
       <CatalogHero
-        title={districtTitle}
-        subtitle={countryTitle}
+        locationTitle={countryTitle}
+        contextLine={districtLine}
         image={district.image ?? country.image}
         locale={locale}
-      />
-      <CatalogFrame className="pt-5 pb-10 sm:pt-6">
+        locationAs="p"
+        contextAs="h1"
+        showFlag={country.slug === "hong-kong"}
+      >
         <DistrictChips
           countrySlug={country.slug}
           districts={districts}
@@ -55,7 +58,7 @@ export function DistrictView({
           active={district.slug}
           allHref={countryPath(country.slug, locale)}
         />
-        <div className="mt-4 sm:mt-5">
+        <div className="mt-3 sm:mt-3.5">
           <ProfileGrid profiles={profiles} locale={locale} dictionary={dictionary} hideDistrict priorityFirst />
         </div>
         <p className="mt-10 max-w-2xl text-[13px] leading-relaxed text-[var(--muted)]">
@@ -66,7 +69,7 @@ export function DistrictView({
             {pickLocalizedText(district.body, locale)}
           </p>
         )}
-      </CatalogFrame>
+      </CatalogHero>
     </PageShell>
   );
 }

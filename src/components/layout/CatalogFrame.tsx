@@ -13,7 +13,7 @@ export function CatalogFrame({
   className?: string;
 }) {
   return (
-    <div className={`mx-auto w-full max-w-[1400px] px-3 sm:px-5 lg:px-8 ${className ?? ""}`}>
+    <div className={`mx-auto w-full max-w-[1440px] px-3 sm:px-5 lg:px-6 ${className ?? ""}`}>
       {children}
     </div>
   );

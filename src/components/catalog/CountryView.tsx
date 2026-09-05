@@ -4,7 +4,6 @@ import { pickLocalizedText } from "@/lib/localize";
 import { CatalogHero } from "@/components/catalog/CatalogHero";
 import { DistrictChips } from "@/components/catalog/DistrictChips";
 import { ProfileGrid } from "@/components/catalog/ProfileGrid";
-import { CatalogFrame } from "@/components/layout/CatalogFrame";
 import { PageShell } from "@/components/layout/PageShell";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
 import { absoluteUrl, countryPath, homePath } from "@/lib/urls";
@@ -37,13 +36,13 @@ export function CountryView({
         data={breadcrumbJsonLd(breadcrumbs.map((item) => ({ name: item.label, url: absoluteUrl(item.href) })))}
       />
       <CatalogHero
-        title={countryTitle}
-        subtitle={dictionary.common.tagline}
+        locationTitle={countryTitle}
+        tagline={dictionary.common.tagline}
         image={country.image}
         locale={locale}
+        locationAs="h1"
         showFlag={country.slug === "hong-kong"}
-      />
-      <CatalogFrame className="pt-5 pb-10 sm:pt-6">
+      >
         <DistrictChips
           countrySlug={country.slug}
           districts={districts}
@@ -51,7 +50,7 @@ export function CountryView({
           dictionary={dictionary}
           allHref={countryPath(country.slug, locale)}
         />
-        <div className="mt-4 sm:mt-5">
+        <div className="mt-3 sm:mt-3.5">
           <ProfileGrid profiles={profiles} locale={locale} dictionary={dictionary} priorityFirst />
         </div>
         {pickLocalizedText(country.intro, locale) && (
@@ -64,7 +63,7 @@ export function CountryView({
             {pickLocalizedText(country.body, locale)}
           </p>
         )}
-      </CatalogFrame>
+      </CatalogHero>
     </PageShell>
   );
 }

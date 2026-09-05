@@ -30,6 +30,7 @@ const dictionary: Dictionary = {
     age: "年齡",
     height: "身高",
     nationality: "國籍",
+    price: "價格",
   },
   gallery: {
     openPhoto: "開啟相片",

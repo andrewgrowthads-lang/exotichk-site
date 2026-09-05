@@ -6,7 +6,6 @@ import { DistrictChips } from "@/components/catalog/DistrictChips";
 import { ProfileGrid } from "@/components/catalog/ProfileGrid";
 import { JsonLd, organizationJsonLd, websiteJsonLd } from "@/components/seo/JsonLd";
 import { absoluteUrl, homePath } from "@/lib/urls";
-import { CatalogFrame } from "@/components/layout/CatalogFrame";
 import { PageShell } from "@/components/layout/PageShell";
 import type { CountryDetail, DistrictDetail, ProfileSummary } from "@/types/content";
 
@@ -58,14 +57,13 @@ export function HomeView({
       />
       <h1 className="sr-only">{siteName}</h1>
       <CatalogHero
-        title={countryTitle}
-        subtitle={dictionary.common.tagline}
+        locationTitle={countryTitle}
+        tagline={dictionary.common.tagline}
         image={country.image}
         locale={locale}
-        titleAs="p"
+        locationAs="p"
         showFlag={country.slug === "hong-kong"}
-      />
-      <CatalogFrame className="pt-5 pb-10 sm:pt-6">
+      >
         <DistrictChips
           countrySlug={country.slug}
           districts={districts}
@@ -73,7 +71,7 @@ export function HomeView({
           dictionary={dictionary}
           allHref={homePath(locale)}
         />
-        <div className="mt-4 sm:mt-5">
+        <div className="mt-3 sm:mt-3.5">
           <ProfileGrid profiles={profiles} locale={locale} dictionary={dictionary} priorityFirst />
         </div>
         {pickLocalizedText(country.intro, locale) && (
@@ -86,7 +84,7 @@ export function HomeView({
             {pickLocalizedText(country.body, locale)}
           </p>
         )}
-      </CatalogFrame>
+      </CatalogHero>
     </PageShell>
   );
 }

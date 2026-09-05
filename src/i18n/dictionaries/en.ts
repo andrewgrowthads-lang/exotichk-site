@@ -28,6 +28,7 @@ const dictionary = {
     age: "Age",
     height: "Height",
     nationality: "Nationality",
+    price: "Price",
   },
   gallery: {
     openPhoto: "Open photo",
