@@ -1,4 +1,6 @@
-hong-kong-harbour-night.jpg
+hong-kong-harbour-night.jpg (source master)
+hong-kong-harbour-night-{1024,1280,1600,1920}.{avif,webp,jpg} — resized derivatives
+hong-kong-harbour-night-portrait.{avif,webp,jpg} — 564x908 centre crop for portrait phones
 Source: Wikimedia Commons
 File: Hong Kong Harbour Night 2019-06-11.jpg
 Author: Benh LIEU SONG

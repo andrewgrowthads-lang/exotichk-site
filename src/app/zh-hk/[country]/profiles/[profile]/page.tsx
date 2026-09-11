@@ -3,6 +3,7 @@ import { ProfileView } from "@/components/catalog/ProfileView";
 import { getDictionary } from "@/i18n/dictionaries";
 import { pickLocalizedText } from "@/lib/localize";
 import { buildPageMetadata } from "@/lib/metadata";
+import { profileMetaDescription } from "@/lib/metaDescription";
 import { profileSeoTitle } from "@/lib/seo";
 import { profilePath } from "@/lib/urls";
 import { getProfileStaticParams } from "@/sanity/queries";
@@ -35,7 +36,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
         district: districtTitle,
         profile: title,
       }),
-    description: pickLocalizedText(profile.seoDescription, LOCALE) || pickLocalizedText(profile.summary, LOCALE),
+    description: profileMetaDescription(profile, LOCALE),
     path: profilePath(countrySlug, profile.slug, LOCALE),
     locale: LOCALE,
     alternates,
