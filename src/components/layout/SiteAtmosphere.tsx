@@ -56,7 +56,7 @@ export function SiteAtmosphere({
         <div className="site-atmosphere__overlay" />
       </div>
       {!cmsImage && (
-        <p className="pointer-events-auto absolute bottom-2 left-[max(0.75rem,env(safe-area-inset-left))] z-[1] max-w-[16rem] text-[10px] leading-snug text-white/25 md:bottom-3">
+        <p className="site-atmosphere__credit pointer-events-auto z-[1] max-w-[16rem] text-[10px] leading-snug text-white/25">
           Photo: Benh LIEU SONG /{" "}
           <a
             href="https://creativecommons.org/licenses/by-sa/4.0/"
