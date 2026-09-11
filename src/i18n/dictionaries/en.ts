@@ -33,6 +33,8 @@ const dictionary = {
   gallery: {
     openPhoto: "Open photo",
     close: "Close",
+    previous: "Previous photo",
+    next: "Next photo",
   },
   notFound: {
     title: "Page not found",

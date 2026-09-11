@@ -35,6 +35,8 @@ const dictionary: Dictionary = {
   gallery: {
     openPhoto: "開啟相片",
     close: "關閉",
+    previous: "上一張相片",
+    next: "下一張相片",
   },
   notFound: {
     title: "找不到頁面",

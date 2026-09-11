@@ -42,6 +42,25 @@ function onlyVisibleProfiles(profiles: ProfileSummary[], locale: LocaleId): Prof
   return profiles.filter((profile) => isVisible({ ...profileVisibility(profile), locale }));
 }
 
+/**
+ * Districts that earn a navigation chip: visible in this locale *and*
+ * currently listing at least one visible profile. `visibleCountryProfiles`
+ * must already be the `onlyVisibleProfiles` result for the whole country,
+ * so a chip appears under exactly the same definition of "visible" as the
+ * cards on the listing — an archived or untranslated profile can't surface
+ * a district here that its own page would list as empty. Purely a
+ * navigation filter: the district route, its `noindex`, and its sitemap
+ * exclusion (`isListingIndexable`) are untouched.
+ */
+function districtsWithVisibleProfiles(
+  districts: DistrictSummary[],
+  visibleCountryProfiles: ProfileSummary[],
+  locale: LocaleId,
+): DistrictSummary[] {
+  const populated = new Set(visibleCountryProfiles.map((profile) => profile.district?.slug));
+  return onlyVisibleDistricts(districts, locale).filter((district) => populated.has(district.slug));
+}
+
 export interface HomePageData {
   country: CountryDetail;
   districts: DistrictDetail[];
@@ -124,7 +143,7 @@ export async function loadCountryPage(countrySlug: string, locale: LocaleId): Pr
   const visibleProfiles = onlyVisibleProfiles(profiles, locale);
   return {
     country,
-    districts: onlyVisibleDistricts(districts, locale),
+    districts: districtsWithVisibleProfiles(districts, visibleProfiles, locale),
     profiles: visibleProfiles,
     alternates: localeAlternates((l) => countryPath(country.slug, l), visibleLocales),
     socialImageUrl: socialImageUrl(country.image) ?? socialImageUrl(settings?.defaultSocialImage),
@@ -167,15 +186,19 @@ export async function loadDistrictPage(
   const visibleLocales = districtLocales.filter((l) => countryLocales.includes(l));
   if (!visibleLocales.includes(locale)) notFound();
 
-  const [districts, profiles] = await Promise.all([
+  // The chip row needs the whole country's visible profiles (not just this
+  // district's) so it hides/shows sibling districts by the same rule as the
+  // home and country pages.
+  const [districts, profiles, countryProfiles] = await Promise.all([
     getDistrictsForCountry(countrySlug),
     getProfilesForDistrict(countrySlug, districtSlug),
+    getProfilesForCountry(countrySlug),
   ]);
   const visibleProfiles = onlyVisibleProfiles(profiles, locale);
   return {
     country,
     district,
-    districts: onlyVisibleDistricts(districts, locale),
+    districts: districtsWithVisibleProfiles(districts, onlyVisibleProfiles(countryProfiles, locale), locale),
     profiles: visibleProfiles,
     alternates: localeAlternates((l) => districtPath(countrySlug, district.slug, l), visibleLocales),
     socialImageUrl:
