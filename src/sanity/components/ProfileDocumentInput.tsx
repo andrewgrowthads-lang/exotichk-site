@@ -1,12 +1,10 @@
 import { useEffect, useRef } from "react";
 import { Stack } from "@sanity/ui";
-import { set, useClient, useEditState, useFormValue, type ObjectInputProps } from "sanity";
+import { set, useFormValue, type ObjectInputProps } from "sanity";
 import { deriveSummaryEn } from "@/sanity/lib/deriveSummary";
 import { slugifyName } from "@/sanity/lib/slugifyName";
 import { ProfilePhotosInput } from "@/sanity/components/ProfilePhotosInput";
 import type { SanityImage } from "@/types/content";
-
-let cachedHongKongId: string | null | undefined;
 
 interface LocaleText {
   _type?: string;
@@ -21,22 +19,15 @@ interface LocaleText {
 export function ProfileDocumentInput(props: ObjectInputProps) {
   const displayName = useFormValue(["displayName"]) as string | undefined;
   const slug = useFormValue(["slug"]) as { current?: string } | undefined;
-  const country = useFormValue(["country"]) as { _ref?: string } | undefined;
   const body = useFormValue(["body"]) as LocaleText | undefined;
   const summary = useFormValue(["summary"]) as LocaleText | undefined;
   const mainImage = useFormValue(["mainImage"]) as SanityImage | undefined;
   const gallery = useFormValue(["gallery"]) as SanityImage[] | undefined;
-  const documentId = useFormValue(["_id"]) as string | undefined;
-  const client = useClient({ apiVersion: "2026-01-01" });
-  const { onChange } = props;
+  const { onChange, readOnly } = props;
   const lastAutoSlug = useRef<string | undefined>(undefined);
 
-  const publishedId = documentId?.replace(/^drafts\./, "") ?? "";
-  const { published } = useEditState(publishedId, "profile", "default");
-  const publishedSlug = (published?.slug as { current?: string } | undefined)?.current;
-
   useEffect(() => {
-    if (publishedSlug) return;
+    if (readOnly) return;
     const next = displayName?.trim() ? slugifyName(displayName) : "";
     if (!next) return;
     if (slug?.current && slug.current !== lastAutoSlug.current) return;
@@ -44,26 +35,10 @@ export function ProfileDocumentInput(props: ObjectInputProps) {
     if (slug?.current !== next) {
       onChange(set({ _type: "slug", current: next }, ["slug"]));
     }
-  }, [displayName, slug, publishedSlug, onChange]);
+  }, [displayName, slug, readOnly, onChange]);
 
   useEffect(() => {
-    if (country?._ref) return;
-    let cancelled = false;
-    void (async () => {
-      if (cachedHongKongId === undefined) {
-        cachedHongKongId = await client.fetch<string | null>(
-          `*[_type == "country" && slug.current == "hong-kong"][0]._id`,
-        );
-      }
-      if (cancelled || !cachedHongKongId) return;
-      onChange(set({ _type: "reference", _ref: cachedHongKongId }, ["country"]));
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [country?._ref, client, onChange]);
-
-  useEffect(() => {
+    if (readOnly || !body?.en?.trim()) return;
     const derived = deriveSummaryEn(body?.en, displayName);
     if (!derived || summary?.en === derived) return;
     onChange(
@@ -76,7 +51,7 @@ export function ProfileDocumentInput(props: ObjectInputProps) {
         ["summary"],
       ),
     );
-  }, [body?.en, displayName, summary?.en, summary?.zhHantHK, onChange]);
+  }, [body?.en, displayName, summary?.en, summary?.zhHantHK, readOnly, onChange]);
 
   const members = props.members.filter((member) => {
     if (member.kind !== "field") return true;
@@ -91,6 +66,7 @@ export function ProfileDocumentInput(props: ObjectInputProps) {
         gallery={gallery}
         displayName={displayName}
         onChange={onChange}
+        readOnly={Boolean(readOnly)}
       />
     </Stack>
   );

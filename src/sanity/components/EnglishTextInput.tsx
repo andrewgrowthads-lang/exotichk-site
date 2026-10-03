@@ -10,6 +10,7 @@ interface LocaleValue {
 /** Single English textarea. Chinese is filled by Publish Profile, not by the editor. */
 export function EnglishTextInput(props: ObjectInputProps) {
   const value = (props.value as LocaleValue | undefined) ?? {};
+  const readOnly = Boolean(props.readOnly);
   return (
     <Stack gap={2}>
       <TextArea
@@ -17,15 +18,17 @@ export function EnglishTextInput(props: ObjectInputProps) {
         padding={3}
         rows={8}
         value={value.en ?? ""}
-        onChange={(event) =>
+        readOnly={readOnly}
+        onChange={(event) => {
+          if (readOnly) return;
           props.onChange(
             set({
               _type: "localeText",
               en: event.currentTarget.value,
               ...(value.zhHantHK ? { zhHantHK: value.zhHantHK } : {}),
             }),
-          )
-        }
+          );
+        }}
       />
       <Card padding={0} tone="transparent">
         <Text muted size={1}>

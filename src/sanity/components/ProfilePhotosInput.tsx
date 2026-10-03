@@ -14,11 +14,13 @@ export function ProfilePhotosInput({
   gallery,
   displayName,
   onChange,
+  readOnly,
 }: {
   mainImage?: ImageValue;
   gallery?: ImageValue[];
   displayName?: string;
   onChange: (patch: FormPatch | FormPatch[]) => void;
+  readOnly: boolean;
 }) {
   const client = useClient({ apiVersion: "2026-01-01" });
   const builder = useMemo(() => imageUrlBuilder(client), [client]);
@@ -39,14 +41,16 @@ export function ProfilePhotosInput({
 
   const write = useCallback(
     (next: ImageValue[]) => {
+      if (readOnly) return;
       const [main, ...rest] = next;
       onChange([main ? set(stripKey(main), ["mainImage"]) : unset(["mainImage"]), set(rest.map(ensureKey), ["gallery"])]);
     },
-    [onChange],
+    [onChange, readOnly],
   );
 
   const addFiles = useCallback(
     async (files: File[]) => {
+      if (readOnly) return;
       const images = files.filter((file) => /^image\/(jpeg|jpg|png|webp)$/i.test(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name));
       if (images.length === 0) {
         setError("Use JPG, PNG, or WebP photos.");
@@ -78,16 +82,18 @@ export function ProfilePhotosInput({
         setBusy(false);
       }
     },
-    [client, displayName, photos, write],
+    [client, displayName, photos, readOnly, write],
   );
 
   const onDrop = (event: DragEvent) => {
     event.preventDefault();
+    if (readOnly) return;
     const files = Array.from(event.dataTransfer.files);
     if (files.length > 0) void addFiles(files);
   };
 
   const onReorderDrop = (to: number) => {
+    if (readOnly) return;
     const from = dragFrom.current;
     dragFrom.current = null;
     if (from == null || from === to) return;
@@ -105,16 +111,22 @@ export function ProfilePhotosInput({
       <Card
         padding={4}
         radius={2}
-        tone={busy ? "transparent" : "primary"}
+        tone={busy || readOnly ? "transparent" : "primary"}
         border
-        onDragOver={(event) => event.preventDefault()}
+        onDragOver={(event) => {
+          if (!readOnly) event.preventDefault();
+        }}
         onDrop={onDrop}
-        style={{ borderStyle: "dashed", cursor: "pointer" }}
-        onClick={() => inputRef.current?.click()}
+        style={{ borderStyle: "dashed", cursor: readOnly ? "default" : "pointer" }}
+        onClick={readOnly ? undefined : () => inputRef.current?.click()}
       >
         <Stack gap={2}>
           <Text align="center" size={1}>
-            {busy ? "Uploading…" : "Drag & drop photos here, or click to select several at once."}
+            {busy
+              ? "Uploading…"
+              : readOnly
+                ? "Photos are read-only in this perspective."
+                : "Drag & drop photos here, or click to select several at once."}
           </Text>
           <Text align="center" muted size={1}>
             First photo is the main photo. Drag photos to reorder.
@@ -125,6 +137,7 @@ export function ProfilePhotosInput({
           type="file"
           accept={ACCEPT}
           multiple
+          disabled={readOnly}
           hidden
           onChange={(event) => {
             const files = Array.from(event.currentTarget.files ?? []);
@@ -146,11 +159,14 @@ export function ProfilePhotosInput({
               padding={1}
               radius={2}
               border
-              draggable
+              draggable={!readOnly}
               onDragStart={() => {
+                if (readOnly) return;
                 dragFrom.current = index;
               }}
-              onDragOver={(event) => event.preventDefault()}
+              onDragOver={(event) => {
+                if (!readOnly) event.preventDefault();
+              }}
               onDrop={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -175,6 +191,7 @@ export function ProfilePhotosInput({
                   fontSize={0}
                   padding={1}
                   text="Remove"
+                  disabled={readOnly}
                   onClick={() => write(photos.filter((_, i) => i !== index))}
                 />
               </Flex>

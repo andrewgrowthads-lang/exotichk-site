@@ -111,7 +111,7 @@ export const profile = defineType({
         const id = await context.getClient({ apiVersion: "2026-01-01" }).fetch<string | null>(
           `*[_type == "country" && slug.current == "hong-kong"][0]._id`,
         );
-        return { _ref: id || "country-hong-kong" };
+        return { _type: "reference", _ref: id || "country-hong-kong" };
       },
       validation: (rule) => rule.required(),
     }),
