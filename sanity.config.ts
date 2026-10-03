@@ -1,5 +1,6 @@
 import { defineConfig } from "sanity";
 import { structureTool } from "sanity/structure";
+import { ArchiveRestoreProfileAction } from "@/sanity/actions/archiveProfile";
 import { GenerateChineseAction } from "@/sanity/actions/generateChinese";
 import { PublishEnglishOnlyAction, PublishProfileAction } from "@/sanity/actions/publishProfile";
 import { schemaTypes } from "@/sanity/schemaTypes";
@@ -41,7 +42,13 @@ export default defineConfig({
     actions: (previous, context) => {
       if (context.schemaType !== "profile") return previous;
       const rest = previous.filter((action) => action.action !== "publish");
-      return [PublishProfileAction, PublishEnglishOnlyAction, GenerateChineseAction, ...rest];
+      return [
+        ArchiveRestoreProfileAction,
+        PublishProfileAction,
+        PublishEnglishOnlyAction,
+        GenerateChineseAction,
+        ...rest,
+      ];
     },
   },
 });

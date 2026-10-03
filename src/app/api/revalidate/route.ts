@@ -63,6 +63,7 @@ export function DELETE(): NextResponse {
 function expireCatalog(): void {
   revalidateTag("catalog", { expire: 0 });
   revalidatePath("/", "layout");
+  revalidatePath("/sitemap.xml");
 }
 
 function secretsEqual(a: string, b: string): boolean {
