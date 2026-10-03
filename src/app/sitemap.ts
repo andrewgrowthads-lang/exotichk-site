@@ -12,6 +12,10 @@ import { absoluteUrl, countryPath, districtPath, homePath, profilePath } from "@
 import { getAllCountries, getAllDistricts, getAllProfiles } from "@/sanity/queries";
 import type { ProfileIndexEntry } from "@/types/content";
 
+// Avoid a separate long-lived full-route cache; catalogue fetches remain
+// tagged and are expired by the authenticated Sanity revalidation endpoint.
+export const dynamic = "force-dynamic";
+
 /**
  * Every entry's `alternates.languages` includes the entry's *own*
  * locale. `next/sitemap` does not add that self-reference automatically,
