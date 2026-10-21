@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import type { LocaleId } from "@/i18n/config";
+import { defaultLocale, locales, type LocaleId } from "@/i18n/config";
 import type { AlternatePath } from "@/lib/metadata";
 import { countryPath, districtPath, homePath, profilePath } from "@/lib/urls";
 import { pickLocalizedText } from "@/lib/localize";
@@ -23,14 +23,16 @@ import {
   getSiteSettings,
 } from "@/sanity/queries";
 import { plainImageUrl, socialImageUrl } from "@/sanity/image";
-import { buildWhatsAppUrl, resolveContact } from "@/lib/contact";
+import { buildWhatsAppUrl, resolveContact, resolveCountryContact } from "@/lib/contact";
 import type {
   ContactLinks,
   CountryDetail,
+  CountrySummary,
   DistrictDetail,
   DistrictSummary,
   ProfileDetail,
   ProfileSummary,
+  SanityImage,
 } from "@/types/content";
 
 /** Drops listing items that would 404 in this locale — a listing must never link to a page it cannot render. */
@@ -61,10 +63,51 @@ function districtsWithVisibleProfiles(
   return onlyVisibleDistricts(districts, locale).filter((district) => populated.has(district.slug));
 }
 
-export interface HomePageData {
-  country: CountryDetail;
-  districts: DistrictDetail[];
-  profiles: ProfileSummary[];
+/** One published country as a link target for the header switcher and the homepage cards. */
+export interface CountryLink {
+  slug: string;
+  title: string;
+  href: string;
+  /**
+   * Set only when the country has no content in the page's locale yet and
+   * the link therefore leads to its default-locale page (e.g. Singapore
+   * launching in English while a visitor browses in Chinese). Never used
+   * for hreflang — that stays limited to real translations.
+   */
+  hrefLang?: string;
+  lang?: string;
+  image?: SanityImage;
+  /** Whether the title is localized for the current page, i.e. counts toward localized copy such as the homepage title. */
+  translated: boolean;
+}
+
+function countryLinks(countries: CountrySummary[], locale: LocaleId): CountryLink[] {
+  const links: CountryLink[] = [];
+  for (const country of countries) {
+    const visible = visibleLocalesFor(countryVisibility(country));
+    const target = visible.includes(locale) ? locale : visible.includes(defaultLocale.id) ? defaultLocale.id : null;
+    if (!target) continue;
+    const crossLocale = target !== locale;
+    links.push({
+      slug: country.slug,
+      title: pickLocalizedText(country.title, target),
+      href: countryPath(country.slug, target),
+      hrefLang: crossLocale ? defaultLocale.hreflang : undefined,
+      lang: crossLocale ? defaultLocale.id : undefined,
+      image: country.image,
+      translated: !crossLocale,
+    });
+  }
+  return links;
+}
+
+/** Header switcher: every published country links to its own catalogue, never to `/`. */
+export async function loadCountryNav(locale: LocaleId): Promise<CountryLink[]> {
+  return countryLinks(await getCountries(), locale);
+}
+
+export interface CountrySelectorData {
+  countries: CountryLink[];
   alternates: AlternatePath[];
   socialImageUrl?: string;
   logoUrl?: string;
@@ -74,43 +117,17 @@ export interface HomePageData {
   defaultSeoDescription?: string;
 }
 
-export interface CountryNavItem {
-  slug: string;
-  title: string;
-}
-
-export interface CountryNavData {
-  countries: CountryNavItem[];
-  homeCountrySlug?: string;
-}
-
-/** Header switcher: default country maps to `/`, others to their country URL. */
-export async function loadCountryNav(locale: LocaleId): Promise<CountryNavData> {
-  const countries = await getCountries();
-  return {
-    homeCountrySlug: countries[0]?.slug,
-    countries: countries
-      .filter((country) => isVisible({ ...countryVisibility(country), locale }))
-      .map((country) => ({
-        slug: country.slug,
-        title: pickLocalizedText(country.title, locale),
-      })),
-  };
-}
-
 /**
- * Brand catalogue at `/` for the default country (first by sort order).
- * Visibility still matches that country's page so a locale 404s here
- * under the same conditions as `/{country}/`.
+ * `/` is the location chooser. It is a page in its own right (indexable,
+ * self-canonical, both locales), not a catalogue: listing one country's
+ * profiles here would duplicate `/{country}/` under a second URL.
  */
-export async function loadHomePage(locale: LocaleId): Promise<HomePageData> {
+export async function loadCountrySelector(locale: LocaleId): Promise<CountrySelectorData> {
   const [countries, settings] = await Promise.all([getCountries(), getSiteSettings()]);
-  const country = countries[0];
-  if (!country) notFound();
-  const page = await loadCountryPage(country.slug, locale);
   return {
-    ...page,
-    alternates: page.alternates.map((alt) => ({ locale: alt.locale, path: homePath(alt.locale) })),
+    countries: countryLinks(countries, locale),
+    alternates: localeAlternates(homePath, locales.map((entry) => entry.id)),
+    socialImageUrl: socialImageUrl(settings?.defaultSocialImage),
     logoUrl: plainImageUrl(settings?.logo, 512),
     agencyName: settings?.agencyName,
     agencyDescription: pickLocalizedText(settings?.agencyDescription, locale) || undefined,
@@ -244,7 +261,7 @@ export async function loadProfilePage(
   if (!visibleLocales.includes(locale)) notFound();
 
   const similar = onlyVisibleProfiles(await getSimilarProfiles(countrySlug, profileSlug), locale);
-  const contact = resolveContact(profile.contact, settings?.contact);
+  const contact = resolveContact(profile.contact, resolveCountryContact(country, settings?.contact));
   return {
     profile,
     country,

@@ -61,10 +61,12 @@ const countryProjection = `{
   intro ${localizedTextProjection},
   body ${localizedTextProjection},
   image ${imageProjection},
+  currency,
   sortOrder,
   "updatedAt": _updatedAt,
   seoTitle ${localizedTextProjection},
   seoDescription ${localizedTextProjection},
+  "contact": { "telegramUrl": telegramUrl, "whatsappUrl": whatsappUrl, "telegramChannelUrl": telegramChannelUrl },
 }`;
 
 const districtProjection = `{
@@ -93,7 +95,7 @@ const profileSummaryProjection = `{
   "seoNoIndex": coalesce(seoNoIndex, false),
   sortOrder,
   "updatedAt": _updatedAt,
-  "country": country->{ "slug": slug.current },
+  "country": country->{ "slug": slug.current, currency },
   "district": district->{ "slug": slug.current, title ${localizedTextProjection} },
   age,
   height,

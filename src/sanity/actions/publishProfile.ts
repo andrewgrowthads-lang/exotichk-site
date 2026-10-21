@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { type DocumentActionComponent, useClient, useDocumentOperation } from "sanity";
+import { usePublishValidation } from "@/sanity/actions/usePublishValidation";
 import { deriveSummaryEn } from "@/sanity/lib/deriveSummary";
 import { scheduleCatalogRevalidate } from "@/sanity/lib/requestRevalidate";
 import { resolveStudioToken } from "@/sanity/lib/studioToken";
@@ -21,6 +22,7 @@ export function PublishProfileAction(
 ): ReturnType<DocumentActionComponent> {
   const client = useClient({ apiVersion: "2026-01-01" });
   const { patch, publish } = useDocumentOperation(props.id, props.type);
+  const blocked = usePublishValidation(props);
   const [busy, setBusy] = useState(false);
   const doc = (props.draft ?? props.published) as ProfileDoc | null;
 
@@ -29,8 +31,8 @@ export function PublishProfileAction(
   return {
     label: busy ? "Publishing…" : "Publish Profile",
     tone: "positive",
-    disabled: busy || !props.ready || Boolean(publish.disabled),
-    title: publish.disabled ? String(publish.disabled) : "Translate (if available) and publish.",
+    disabled: busy || !props.ready || Boolean(publish.disabled) || Boolean(blocked),
+    title: publish.disabled ? String(publish.disabled) : (blocked ?? "Translate (if available) and publish."),
     onHandle: async () => {
       if (!doc) return;
       setBusy(true);
@@ -87,6 +89,7 @@ export function PublishEnglishOnlyAction(
 ): ReturnType<DocumentActionComponent> {
   const client = useClient({ apiVersion: "2026-01-01" });
   const { patch, publish } = useDocumentOperation(props.id, props.type);
+  const blocked = usePublishValidation(props);
   const [busy, setBusy] = useState(false);
   const doc = (props.draft ?? props.published) as ProfileDoc | null;
 
@@ -94,8 +97,8 @@ export function PublishEnglishOnlyAction(
 
   return {
     label: busy ? "Publishing…" : "Publish English only",
-    disabled: busy || !props.ready || Boolean(publish.disabled),
-    title: "Publish without translating. Chinese pages stay hidden until Chinese exists.",
+    disabled: busy || !props.ready || Boolean(publish.disabled) || Boolean(blocked),
+    title: blocked ?? "Publish without translating. Chinese pages stay hidden until Chinese exists.",
     onHandle: async () => {
       if (!doc) return;
       setBusy(true);

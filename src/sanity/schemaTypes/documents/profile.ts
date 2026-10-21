@@ -1,11 +1,15 @@
 import { defineField, defineType } from "sanity";
+import { resolveCountryContact } from "@/lib/contact";
 import { PUBLISHED_STATUS } from "@/lib/visibility";
 import { EnglishTextInput } from "@/sanity/components/EnglishTextInput";
+import { PriceInput } from "@/sanity/components/PriceInput";
 import { ProfileDocumentInput } from "@/sanity/components/ProfileDocumentInput";
 import { generateInternalId } from "@/sanity/lib/generateInternalId";
 import { validateContactUrl } from "@/sanity/schemaTypes/validators/contactUrl";
 import { districtBelongsToCountry } from "@/sanity/schemaTypes/validators/districtBelongsToCountry";
 import { immutableInternalName } from "@/sanity/schemaTypes/validators/immutableInternalName";
+import { immutablePublishedCountry } from "@/sanity/schemaTypes/validators/immutablePublishedCountry";
+import type { ContactLinks } from "@/types/content";
 import { immutablePublishedSlug } from "@/sanity/schemaTypes/validators/immutablePublishedSlug";
 import { uniqueInternalName } from "@/sanity/schemaTypes/validators/uniqueInternalName";
 import { uniqueSlugWithinCountry } from "@/sanity/schemaTypes/validators/uniqueSlugWithinCountry";
@@ -24,9 +28,8 @@ const STATUS_OPTIONS = [
   { title: "Archived", value: "archived" },
 ];
 
-let siteContactCache: { at: number; value: { telegramUrl?: string; whatsappUrl?: string } | null } | null =
-  null;
-const SITE_CONTACT_CACHE_MS = 5_000;
+const countryContactCache = new Map<string, { at: number; value: ContactLinks }>();
+const CONTACT_CACHE_MS = 5_000;
 
 const hidden = true;
 
@@ -37,6 +40,15 @@ export const profile = defineType({
   components: { input: ProfileDocumentInput },
   fields: [
     defineField({
+      name: "country",
+      title: "Country",
+      description: "Sets the districts, currency and contact buttons. Cannot be changed after publishing.",
+      type: "reference",
+      to: [{ type: "country" }],
+      options: { disableNew: true, filter: 'status == "active"' },
+      validation: (rule) => immutablePublishedCountry()(rule.required()),
+    }),
+    defineField({
       name: "displayName",
       title: "Name",
       type: "string",
@@ -45,6 +57,7 @@ export const profile = defineType({
     defineField({
       name: "district",
       title: "District",
+      description: "Only districts of the selected country are listed.",
       type: "reference",
       to: [{ type: "district" }],
       options: {
@@ -89,9 +102,10 @@ export const profile = defineType({
     }),
     defineField({
       name: "price",
-      title: "Price (HKD)",
-      description: "Numbers only, e.g. 1500.",
+      title: "Price",
+      description: "Numbers only, e.g. 1500. Shown in the country's currency (HK$ or S$).",
       type: "number",
+      components: { input: PriceInput },
       validation: (rule) => rule.integer().min(1).max(999999),
     }),
     defineField({
@@ -99,21 +113,6 @@ export const profile = defineType({
       title: "Description",
       type: "localeText",
       components: { input: EnglishTextInput },
-    }),
-
-    defineField({
-      name: "country",
-      title: "Country",
-      type: "reference",
-      to: [{ type: "country" }],
-      hidden,
-      initialValue: async (_, context) => {
-        const id = await context.getClient({ apiVersion: "2026-01-01" }).fetch<string | null>(
-          `*[_type == "country" && slug.current == "hong-kong"][0]._id`,
-        );
-        return { _type: "reference", _ref: id || "country-hong-kong" };
-      },
-      validation: (rule) => rule.required(),
     }),
     defineField({
       name: "status",
@@ -151,7 +150,7 @@ export const profile = defineType({
       type: "string",
       hidden,
       readOnly: true,
-      initialValue: generateInternalId,
+      initialValue: () => generateInternalId(),
       validation: (rule) => immutableInternalName()(uniqueInternalName()(rule.required())),
     }),
     defineField({
@@ -210,21 +209,21 @@ export const profile = defineType({
     }),
     defineField({
       name: "telegramUrl",
-      title: "Telegram (overrides site default)",
+      title: "Telegram (overrides country default)",
       type: "url",
       hidden,
       validation: validateContactUrl("telegram"),
     }),
     defineField({
       name: "whatsappUrl",
-      title: "WhatsApp (overrides site default)",
+      title: "WhatsApp (overrides country default)",
       type: "url",
       hidden,
       validation: validateContactUrl("whatsapp"),
     }),
     defineField({
       name: "telegramChannelUrl",
-      title: "Telegram channel (overrides site default)",
+      title: "Telegram channel (overrides country default)",
       type: "url",
       hidden,
       validation: validateContactUrl("telegramChannel"),
@@ -268,33 +267,70 @@ export const profile = defineType({
       initialValue: false,
     }),
   ],
-  validation: (rule) =>
-    rule.custom(async (document, context) => {
+  validation: (rule) => [
+    rule.custom((document) => {
       const draft = document as ProfileDraft | undefined;
-      const status = draft?.status;
-      if (!status) return true;
-
-      const publiclyRendered = (PUBLISHED_STATUS.profile as readonly string[]).includes(status);
-      if (!publiclyRendered) return true;
-
-      if (status === "active" && !draft?.mainImage) {
+      if (draft?.status === "active" && !draft?.mainImage) {
         return "Add at least one photo before publishing.";
       }
-
-      if (draft?.telegramUrl || draft?.whatsappUrl) return true;
-      const now = Date.now();
-      let settings = siteContactCache && now - siteContactCache.at < SITE_CONTACT_CACHE_MS ? siteContactCache.value : null;
-      if (!siteContactCache || now - siteContactCache.at >= SITE_CONTACT_CACHE_MS) {
-        settings = await context.getClient({ apiVersion: "2026-01-01" }).fetch<{
-          telegramUrl?: string;
-          whatsappUrl?: string;
-        } | null>(`*[_type == "siteSettings"][0]{ telegramUrl, whatsappUrl }`);
-        siteContactCache = { at: now, value: settings };
-      }
-      if (settings?.telegramUrl || settings?.whatsappUrl) return true;
-      return "A published profile needs at least one contact method, either on the profile or as a site-wide default.";
+      return true;
     }),
+    // A missing contact only hides the button on the site, so it warns
+    // rather than blocks: Singapore profiles may go live before its
+    // manager links are set up.
+    rule
+      .custom(async (document, context) => {
+        const draft = document as ProfileDraft | undefined;
+        const status = draft?.status;
+        if (!status || !(PUBLISHED_STATUS.profile as readonly string[]).includes(status)) return true;
+        if (draft?.telegramUrl || draft?.whatsappUrl) return true;
+        const countryId = draft?.country?._ref;
+        if (!countryId) return true;
+
+        const now = Date.now();
+        const cached = countryContactCache.get(countryId);
+        let contact = cached && now - cached.at < CONTACT_CACHE_MS ? cached.value : undefined;
+        if (contact === undefined) {
+          const result = await context.getClient({ apiVersion: "2026-01-01" }).fetch<{
+            country: { slug?: string; contact?: ContactLinks } | null;
+            legacy: ContactLinks | null;
+          }>(
+            `{
+              "country": *[_id == $countryId][0]{
+                "slug": slug.current,
+                "contact": { telegramUrl, whatsappUrl, telegramChannelUrl }
+              },
+              "legacy": *[_type == "siteSettings"][0]{ telegramUrl, whatsappUrl, telegramChannelUrl }
+            }`,
+            { countryId },
+          );
+          const country = result.country;
+          contact = country?.slug
+            ? resolveCountryContact({ slug: country.slug, contact: country.contact }, result.legacy ?? undefined)
+            : {};
+          countryContactCache.set(countryId, { at: now, value: contact });
+        }
+        if (contact.telegramUrl || contact.whatsappUrl) return true;
+        return "This country has no WhatsApp or Telegram manager yet, so no contact button will be shown. Add them under Country settings.";
+      })
+      .warning(),
+  ],
   preview: {
-    select: { title: "displayName", subtitle: "status", media: "mainImage" },
+    select: {
+      title: "displayName",
+      status: "status",
+      country: "country.title.en",
+      district: "district.title.en",
+      internalName: "internalName",
+      media: "mainImage",
+    },
+    prepare: ({ title, status, country, district, internalName, media }) => {
+      const statusLabel = STATUS_OPTIONS.find((option) => option.value === status)?.title ?? status;
+      return {
+        title: title || "Untitled",
+        subtitle: [internalName, country, district, statusLabel].filter(Boolean).join(" · "),
+        media,
+      };
+    },
   },
 });

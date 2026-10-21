@@ -11,25 +11,40 @@ export const district = defineType({
   type: "document",
   fields: [
     defineField({
-      name: "internalName",
-      title: "Internal name (Studio only)",
-      type: "string",
-      validation: (rule) => rule.required(),
-    }),
-    defineField({
       name: "country",
       title: "Country",
       type: "reference",
       to: [{ type: "country" }],
+      options: { disableNew: true },
       validation: (rule) => districtCountryHasNoProfileConflicts()(rule.required()),
+    }),
+    defineField({
+      name: "title",
+      title: "Title",
+      description: "District name shown on the site, e.g. Orchard.",
+      type: "localeString",
+      validation: (rule) => rule.required(),
+    }),
+    defineField({
+      name: "internalName",
+      title: "Internal name (Studio only)",
+      description: "Usually the same as the title.",
+      type: "string",
+      validation: (rule) => rule.required(),
     }),
     defineField({
       name: "slug",
       title: "Slug",
       description:
-        "Part of the canonical URL. Treat as immutable once published — renaming requires a 301 entry in src/lib/permanentRedirects.ts for every locale, followed by a deploy. Unique within the selected country.",
+        "Part of the canonical URL — click Generate. Treat as immutable once published — renaming requires a 301 entry in src/lib/permanentRedirects.ts for every locale, followed by a deploy. Unique within the selected country.",
       type: "slug",
-      options: { source: "internalName", maxLength: 64 },
+      options: {
+        source: (document) => {
+          const draft = document as { internalName?: string; title?: { en?: string } };
+          return draft.title?.en || draft.internalName || "";
+        },
+        maxLength: 64,
+      },
       validation: (rule) =>
         immutablePublishedSlug()(
           uniqueSlugWithinCountry("district")(
@@ -40,7 +55,6 @@ export const district = defineType({
           ),
         ),
     }),
-    defineField({ name: "title", title: "Title", type: "localeString", validation: (rule) => rule.required() }),
     defineField({ name: "intro", title: "Intro", type: "localeText", validation: (rule) => rule.required() }),
     defineField({ name: "body", title: "Body", type: "localeText" }),
     defineField({ name: "image", title: "Hero image", type: "localeImage" }),
@@ -49,6 +63,7 @@ export const district = defineType({
     defineField({
       name: "status",
       title: "Status",
+      description: "The district tab appears on the site only once it has at least one visible profile.",
       type: "string",
       options: {
         list: [
@@ -63,6 +78,11 @@ export const district = defineType({
     defineField({ name: "sortOrder", title: "Sort order", type: "number", initialValue: 0 }),
   ],
   preview: {
-    select: { title: "title.en", subtitle: "internalName", media: "image" },
+    select: { title: "title.en", country: "country.title.en", internalName: "internalName", media: "image" },
+    prepare: ({ title, country, internalName, media }) => ({
+      title: title || internalName || "Untitled",
+      subtitle: [country, internalName].filter(Boolean).join(" · "),
+      media,
+    }),
   },
 });

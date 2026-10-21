@@ -101,6 +101,8 @@ export function normalizeMatchKey(value: string): string {
 const COUNTRY_ALIASES: Record<string, string> = {
   "hong kong": "hong-kong",
   "hong-kong": "hong-kong",
+  singapore: "singapore",
+  sg: "singapore",
 };
 
 const DISTRICT_ALIASES: Record<string, string> = {

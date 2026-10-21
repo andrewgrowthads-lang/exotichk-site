@@ -9,6 +9,15 @@ const dictionary = {
     breadcrumbHome: "Home",
     tagline: "Private companions",
     adultsOnly: "18+",
+    location: "Location",
+    chooseLocation: "Choose location",
+  },
+  selector: {
+    heading: "Choose your location",
+    subtitle: "Select a city to browse its profiles.",
+    viewProfiles: "View profiles",
+    inEnglish: "In English",
+    empty: "No locations are available right now.",
   },
   contact: {
     telegram: "Telegram",

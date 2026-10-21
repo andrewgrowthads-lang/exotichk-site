@@ -71,7 +71,7 @@ export function PageShell({
 }) {
   return (
     <>
-      <SiteAtmosphere image={atmosphereImage} intensity={atmosphereIntensity} />
+      <SiteAtmosphere image={atmosphereImage} countrySlug={activeCountrySlug} intensity={atmosphereIntensity} />
       <div className="relative z-10 flex min-h-dvh flex-col">
         <header className="sticky top-0 z-30 border-b border-[var(--accent)]/22 bg-[var(--background)]/55 backdrop-blur-md">
           <CatalogFrame className="flex h-12 items-center justify-between gap-3 sm:h-[3.25rem]">

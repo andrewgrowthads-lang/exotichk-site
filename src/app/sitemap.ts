@@ -107,13 +107,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   );
   const { countryProfileCount, districtProfileCount } = groupProfiles(profiles);
 
-  const homeCountry = countries[0];
-  const homeLocales = homeCountry ? (countryLocales.get(homeCountry.slug) ?? []) : [];
+  // The location chooser exists in every locale regardless of catalogue
+  // content; it changes when the set of countries (or their titles) does.
+  const homeLocales = locales.map((locale) => locale.id);
+  const homeUpdatedAt = countries.reduce<number>(
+    (latest, country) => Math.max(latest, Date.parse(country.updatedAt) || 0),
+    0,
+  );
   const entries: MetadataRoute.Sitemap = localizedEntries(
     homePath,
     homeLocales,
     homeLocales,
-    homeCountry?.updatedAt ? new Date(homeCountry.updatedAt) : new Date(),
+    homeUpdatedAt ? new Date(homeUpdatedAt) : new Date(),
   );
 
   for (const country of countries) {

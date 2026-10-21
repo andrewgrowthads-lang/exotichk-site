@@ -1,44 +1,39 @@
 import type { Metadata } from "next";
-import { HomeView } from "@/components/catalog/HomeView";
+import { CountrySelectorView } from "@/components/catalog/CountrySelectorView";
 import { getDictionary } from "@/i18n/dictionaries";
-import { pickLocalizedText } from "@/lib/localize";
 import { buildPageMetadata } from "@/lib/metadata";
 import { homeSeoDescription, homeSeoTitle } from "@/lib/seo";
 import { homePath } from "@/lib/urls";
-import { loadHomePage } from "@/sanity/pageData";
+import { loadCountrySelector } from "@/sanity/pageData";
 
 const LOCALE = "en" as const;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { country, alternates, socialImageUrl, agencyName, defaultSeoTitle, defaultSeoDescription } =
-    await loadHomePage(LOCALE);
+  const { countries, alternates, socialImageUrl, agencyName, defaultSeoTitle, defaultSeoDescription } =
+    await loadCountrySelector(LOCALE);
   const dictionary = getDictionary(LOCALE);
-  const countryTitle = pickLocalizedText(country.title, LOCALE);
+  const siteName = agencyName || dictionary.common.siteName;
+  const titles = countries.filter((country) => country.translated).map((country) => country.title);
   return buildPageMetadata({
-    title:
-      defaultSeoTitle ||
-      homeSeoTitle({ locale: LOCALE, siteName: agencyName || dictionary.common.siteName, country: countryTitle }),
-    description: defaultSeoDescription || homeSeoDescription(LOCALE, countryTitle),
+    title: defaultSeoTitle || homeSeoTitle({ locale: LOCALE, siteName, countries: titles }),
+    description: defaultSeoDescription || homeSeoDescription(LOCALE, titles),
     path: homePath(LOCALE),
     locale: LOCALE,
     alternates,
     socialImageUrl,
-    socialImageAlt: countryTitle,
-    siteName: agencyName || dictionary.common.siteName,
+    socialImageAlt: siteName,
+    siteName,
   });
 }
 
 export default async function HomePage() {
   const dictionary = getDictionary(LOCALE);
-  const { country, districts, profiles, alternates, logoUrl, agencyName, agencyDescription } =
-    await loadHomePage(LOCALE);
+  const { countries, alternates, logoUrl, agencyName, agencyDescription } = await loadCountrySelector(LOCALE);
   return (
-    <HomeView
+    <CountrySelectorView
       locale={LOCALE}
       dictionary={dictionary}
-      country={country}
-      districts={districts}
-      profiles={profiles}
+      countries={countries}
       alternateHref={alternates.find((alt) => alt.locale === "zh-Hant-HK")?.path}
       logoUrl={logoUrl}
       agencyName={agencyName}

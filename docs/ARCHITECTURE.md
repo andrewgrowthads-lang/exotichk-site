@@ -80,11 +80,11 @@ Sanity Studio разворачивается отдельно средствам
 Публичные канонические маршруты:
 
 ```text
-/                                      English landing
+/                                      English location chooser (Hong Kong / Singapore)
 /{country}/                            Country
 /{country}/{district}/                 District
 /{country}/profiles/{profile}/         Profile
-/zh-hk/                                Traditional Chinese landing
+/zh-hk/                                Traditional Chinese location chooser
 /zh-hk/{country}/                      Country
 /zh-hk/{country}/{district}/           District
 /zh-hk/{country}/profiles/{profile}/   Profile
@@ -133,18 +133,20 @@ Sanity Studio разворачивается отдельно средствам
 
 - Название, юридически корректное описание агентства и логотип (используется только в JSON-LD `Organization`, не рендерится на странице напрямую).
 - Default SEO title, description и social image.
-- Global Telegram (manager), WhatsApp и опциональный Telegram channel.
-- Контактные значения служат fallback для профилей.
+- Legacy-контакты (Telegram, WhatsApp, channel): только чтение в Studio. Используются **только для Hong Kong** и только пока у документа Hong Kong нет собственных контактов (см. `docs/MULTI_COUNTRY.md`). Ни одна другая страна их не получает.
 - Production base URL здесь **не хранится**: он берётся из environment variable, чтобы правка в CMS не могла одномоментно переписать canonical всего сайта.
-- В Studio поля сгруппированы в три вкладки — Brand / Contact / Social — вместо одной длинной формы.
+- В Studio поля сгруппированы во вкладки Brand / Legacy contacts / Social.
 
 ### `country`
 
+- В Studio — раздел **Country settings**, вкладки Contacts / Page text / Background / SEO / Settings.
+- Контакты страны: `whatsappUrl`, `telegramUrl`, `telegramChannelUrl`. Используются как набор: пустое поле скрывает кнопку и никогда не заимствуется у другой страны.
+- `currency`: `HKD` | `SGD` (символ — `lib/formatPrice.ts`).
 - `internalName`, immutable `slug`.
 - Локализованные `title`, `intro`, body, SEO title/description, image alt.
-- Hero/listing image с hotspot и crop.
+- `image` — фон страницы страны и карточка на странице выбора; при отсутствии — встроенное лицензированное фото из `lib/countryPresets.ts`.
 - `status`: `active` | `archived`.
-- `sortOrder`.
+- `sortOrder` — порядок на странице выбора и в меню стран.
 
 ### `district`
 
@@ -164,7 +166,8 @@ Sanity Studio разворачивается отдельно средствам
 - Фото: `mainImage` (обложка, обязательна для `active`) и `gallery` (доп. фото, до 11). Studio показывает их отдельными полями для редактора, но `sanity/queries.ts` сразу склеивает их в один массив `images` (main первым) — весь остальной код работает с одним упорядоченным списком, а не с двумя.
 - Структурированные атрибуты: `age`, `height` (см), `nationality`, `languages` (свободный tag-инпут) — простые строки, не `LocalizedText`: редактор заполняет значение один раз, а не переводит его. Небольшой словарь переводов для фронта — в `lib/localize.ts`, по той же схеме, что и `attributes`.
 - Локализованные `summary` (short description) и `body` (full description), `attributes` (доп. характеристики, свободные теги).
-- Contact overrides: Telegram, WhatsApp, опциональный Telegram channel. При отсутствии override используются значения `siteSettings`.
+- Contact overrides: Telegram, WhatsApp, опциональный Telegram channel (поле за полем). При отсутствии override используются контакты страны профиля (`resolveCountryContact` в `lib/contact.ts`).
+- `country` выбирается первым полем формы и неизменяем после публикации (`immutablePublishedCountry`); цена показывается в валюте страны.
 - SEO: `seoTitle`/`seoDescription` (override), `h1Override` (замена H1 без изменения отображаемого имени), `ogImage` (override соц. картинки, иначе — main photo, иначе — `siteSettings.defaultSocialImage`), `seoNoIndex` (bool) — страница остаётся доступной и в листингах, но получает `noindex, follow` и не попадает в sitemap; это не альтернатива статусам, а точечный редакторский escape hatch.
 - `publishedAt`, `updatedAt`, локализованный `unavailableMessage`.
 - Не моделируются отзывы, рейтинги, бронирования, платежи и данные клиентов.
@@ -174,7 +177,7 @@ Sanity Studio разворачивается отдельно средствам
 - `profile.district.country` обязан совпадать с `profile.country`.
 - Slug профиля уникален в пределах страны, поскольку district не входит в URL профиля.
 - Контактные URL принимают только разрешённые HTTPS-хосты: `t.me`, `wa.me` и явно утверждённые варианты.
-- Для `active` обязательны country, district, минимум одно изображение, английский контент и минимум один основной способа связи.
+- Для `active` обязательны country, district, минимум одно изображение и английский контент. Отсутствие контактов у страны — предупреждение (кнопки скрываются), а не блокировка публикации.
 - Архивировать country или district нельзя, пока на них ссылается неархивированный профиль. Это исключает состояние «профиль без видимого родителя».
 - Удаление документов, на которые есть ссылки, блокируется штатной проверкой ссылок Sanity.
 
@@ -185,12 +188,13 @@ flowchart LR
   Country[Country] -->|"1:N"| District[District]
   Country -->|"1:N"| Profile[Profile]
   District -->|"1:N"| Profile
-  SiteSettings[SiteSettings] -->|"contact fallback"| Profile
+  Country -->|"contacts, currency"| Profile
+  SiteSettings[SiteSettings] -.->|"legacy contacts, Hong Kong only"| Country
 ```
 
 - References хранятся только на дочернем документе. Массивы district- или profile-идентификаторов внутри country не дублируются.
 - Country page запрашивает страну, её районы и её видимые профили.
-- Landing и Country имеют разные поисковые задачи и не дублируют один листинг: landing — брендовый навигационный хаб с районами и только featured-профилями, Country — полный каталог страны. Оба остаются самостоятельными self-canonical индексируемыми URL.
+- `/` — страница выбора страны (без профилей, без геолокации и редиректов); каталог каждой страны живёт только на `/{country}/`. Оба URL self-canonical и индексируемые.
 - District page запрашивает район по паре country slug + district slug и связанные профили.
 - Profile page запрашивает профиль по паре country slug + profile slug и проверяет согласованность reference на страну.
 - У профиля один основной район. Multi-district не вводится до появления реального требования.
@@ -210,7 +214,7 @@ flowchart LR
 - `dynamicParams` остаётся включённым: профиль, добавленный в CMS, становится доступен без редеплоя.
 - Страницы используют ISR как страховку (1 час) и tag-based invalidation для быстрого обновления из CMS.
 - Используется **один тег `catalog`** для всех каталожных запросов, включая sitemap. Гранулярные теги на документ не вводятся: при 100 профилях их единственный эффект — сложный код и класс ошибок вида «профиль перенесли в другой район, старый листинг не инвалидировался», потому что payload вебхука не содержит прежнего состояния документа.
-- Единственный API endpoint — `POST /api/revalidate`. Sanity webhook с server-only секретом вызывает `revalidateTag('catalog')`. Endpoint не принимает путь или тег от клиента.
+- Единственный API endpoint — `POST /api/revalidate`. Sanity webhook с server-only секретом вызывает `revalidateTag('catalog')`. Endpoint не принимает путь или тег от клиента. Webhook должен срабатывать на типы `profile`, `district`, `country` и `siteSettings`; кроме того, публикация из Studio (Publish Profile и Publish для country/district/siteSettings) сама вызывает тот же endpoint с сессией редактора.
 - Sanity client работает с `useCdn: false` и `perspective: 'published'`. Кэширование обеспечивает Next.js; чтение через CDN Sanity создаёт гонку, при которой вебхук приходит раньше обновления кэша и страница регенерируется устаревшим контентом ещё на час.
 - Draft Mode на публичном сайте не реализуется. При необходимости добавляется отдельно.
 - Основной контент, metadata и навигация — Server Components. `searchParams` серверными страницами не читаются, чтобы UTM не переводили маршруты в dynamic rendering.
@@ -228,7 +232,7 @@ flowchart LR
 - `/robots.txt` разрешает публичный каталог и указывает sitemap. Для удаления уже проиндексированных страниц robots не используется.
 - Все окружения кроме production отдают `X-Robots-Tag: noindex, nofollow`, а их `robots.txt` запрещает обход целиком. Preview-домены не должны попадать в индекс.
 - Технические `/api/*` URL всегда получают `X-Robots-Tag: noindex, nofollow, noarchive`. Параметры не меняют canonical: UTM остаются на входном URL только для аналитики, canonical всегда чистый. Если появятся функциональные query URL (`q`, `search`, `filter`, `sort`, `page`), они дополнительно получают `X-Robots-Tag: noindex, follow, noarchive` через `next.config.ts`.
-- JSON-LD ограничивается `Organization` и `WebSite` на landing и `BreadcrumbList` на внутренних страницах. `ProfilePage` и `CollectionPage` не размечаются: rich results они не дают, а поддерживать и локализовать их нужно. Вымышленные Review и AggregateRating запрещены.
+- JSON-LD ограничивается `Organization` и `WebSite` на странице выбора страны и `BreadcrumbList` на внутренних страницах. `ProfilePage` и `CollectionPage` не размечаются: rich results они не дают, а поддерживать и локализовать их нужно. Вымышленные Review и AggregateRating запрещены.
 - Breadcrumbs визуально отражают Country → District → Profile, хотя canonical профиля район не содержит.
 - Country и district должны иметь уникальные intro и body. Тонкие листинги без самостоятельной ценности не создаются.
 - Неизвестный slug возвращает настоящий 404. Массовый редирект удалённых профилей на район запрещён как soft-404.

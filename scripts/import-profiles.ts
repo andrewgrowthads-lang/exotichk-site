@@ -285,7 +285,7 @@ async function createProfile(
     district: { _type: "reference", _ref: row.district._id },
     status: row.status,
     slug: { _type: "slug", current: row.slug },
-    internalName: generateInternalId(),
+    internalName: generateInternalId(row.country.slug),
     summary: { _type: "localeText", en: row.summaryEn },
     featured: row.featured,
     sortOrder: row.sortOrder,

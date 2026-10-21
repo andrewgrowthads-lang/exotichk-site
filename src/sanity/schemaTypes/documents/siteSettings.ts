@@ -10,13 +10,16 @@ import { validateContactUrl } from "@/sanity/schemaTypes/validators/contactUrl";
  * CMS (with no code review, no history, no rollback) would break SEO
  * instantly. The base URL lives in an environment variable instead.
  */
+const LEGACY_CONTACT_NOTE =
+  "Read-only. Contacts are now edited per country under Country settings. This value is used only for Hong Kong, and only while the Hong Kong country has no contacts of its own.";
+
 export const siteSettings = defineType({
   name: "siteSettings",
   title: "Site settings",
   type: "document",
   groups: [
     { name: "brand", title: "Brand", default: true },
-    { name: "contact", title: "Contact" },
+    { name: "contact", title: "Legacy contacts" },
     { name: "social", title: "Social" },
   ],
   fields: [
@@ -43,39 +46,45 @@ export const siteSettings = defineType({
     }),
     defineField({
       name: "telegramUrl",
-      title: "Telegram (manager)",
-      description: "Default contact used when a profile has no Telegram override.",
+      title: "Telegram (legacy)",
+      description: LEGACY_CONTACT_NOTE,
       type: "url",
       group: "contact",
+      readOnly: true,
+      hidden: ({ value }) => !value,
       validation: validateContactUrl("telegram"),
     }),
     defineField({
       name: "whatsappUrl",
-      title: "WhatsApp",
-      description: "Default contact used when a profile has no WhatsApp override.",
+      title: "WhatsApp (legacy)",
+      description: LEGACY_CONTACT_NOTE,
       type: "url",
       group: "contact",
+      readOnly: true,
+      hidden: ({ value }) => !value,
       validation: validateContactUrl("whatsapp"),
     }),
     defineField({
       name: "telegramChannelUrl",
-      title: "Telegram channel",
-      description: "Optional public channel link, shown alongside the direct manager contact.",
+      title: "Telegram channel (legacy)",
+      description: LEGACY_CONTACT_NOTE,
       type: "url",
       group: "contact",
+      readOnly: true,
+      hidden: ({ value }) => !value,
       validation: validateContactUrl("telegramChannel"),
     }),
     defineField({
       name: "defaultSeoTitle",
       title: "Default SEO title",
-      description: "Optional homepage title. Other pages use their own entity-specific title or SEO override.",
+      description: "Optional title for the location page (/). Other pages use their own entity-specific title or SEO override.",
       type: "localeString",
       group: "social",
     }),
     defineField({
       name: "defaultSeoDescription",
       title: "Default meta description",
-      description: "Optional homepage meta description. Other pages use their own localized content.",
+      description: "Optional meta description for the location page (/). Other pages use their own localized content.",
       type: "localeText",
       group: "social",
     }),

@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
 import type { LocaleId } from "@/i18n/config";
-import { HongKongFlag } from "@/components/brand/HongKongFlag";
+import { CountryFlag } from "@/components/brand/CountryFlag";
 import { CatalogFrame } from "@/components/layout/CatalogFrame";
 
 /**
- * Catalogue heading + chips/grid slot. The Hong Kong night image is no
- * longer painted here — PageShell's SiteAtmosphere is the single
- * site-wide background — so this is only the content that sits on top.
+ * Catalogue heading + chips/grid slot. The city night image is not
+ * painted here — PageShell's SiteAtmosphere is the single site-wide
+ * background — so this is only the content that sits on top.
  */
 export function CatalogHero({
   locationTitle,
@@ -15,7 +15,7 @@ export function CatalogHero({
   locale,
   locationAs = "p",
   contextAs = "p",
-  showFlag = false,
+  countrySlug,
   children,
 }: {
   locationTitle: string;
@@ -24,7 +24,8 @@ export function CatalogHero({
   locale: LocaleId;
   locationAs?: "h1" | "p";
   contextAs?: "h1" | "p";
-  showFlag?: boolean;
+  /** Shows the country's flag beside the title when one is bundled. */
+  countrySlug?: string;
   children: ReactNode;
 }) {
   const LocationTag = locationAs;
@@ -35,9 +36,10 @@ export function CatalogHero({
     <div className="relative">
       <CatalogFrame className="pt-5 pb-0 sm:pt-7 lg:pt-8">
         <div className="flex items-center gap-2.5 sm:gap-3">
-          {showFlag && (
-            <HongKongFlag className="h-5 w-[30px] rounded-[3px] shadow-[0_0_18px_rgba(255,45,138,0.4)] ring-1 ring-[var(--accent)]/45 sm:h-6 sm:w-9" />
-          )}
+          <CountryFlag
+            slug={countrySlug}
+            className="h-5 w-[30px] rounded-[3px] shadow-[0_0_18px_rgba(255,45,138,0.4)] ring-1 ring-[var(--accent)]/45 sm:h-6 sm:w-9"
+          />
           <LocationTag
             className={`text-[28px] leading-none font-semibold text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.85)] sm:text-[40px] lg:text-[48px] ${
               englishDisplay ? "tracking-[0.18em] uppercase" : "tracking-wide"

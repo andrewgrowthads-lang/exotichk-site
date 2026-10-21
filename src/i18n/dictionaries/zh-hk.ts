@@ -11,6 +11,15 @@ const dictionary: Dictionary = {
     breadcrumbHome: "首頁",
     tagline: "私人伴侶",
     adultsOnly: "18+",
+    location: "地區",
+    chooseLocation: "選擇地區",
+  },
+  selector: {
+    heading: "選擇你的地區",
+    subtitle: "選擇城市，瀏覽當地的個人檔案。",
+    viewProfiles: "瀏覽檔案",
+    inEnglish: "英文版",
+    empty: "目前沒有可選擇的地區。",
   },
   contact: {
     telegram: "Telegram",

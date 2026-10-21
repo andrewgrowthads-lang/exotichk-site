@@ -1,17 +1,18 @@
 /**
  * Public district labels for navigation chips, listing headings, and
  * profile cards. CMS `title` remains the source for SEO/metadata;
- * these strings are presentation-only and keyed by slug.
+ * these strings are presentation-only and keyed by `{country}/{district}`
+ * so a same-named district in another country never picks them up.
  */
 const DISTRICT_PUBLIC_LABELS: Record<string, { nav: string; expanded: string }> = {
-  tst: { nav: "TST", expanded: "Tsim Sha Tsui (尖沙咀)" },
-  "wan-chai": { nav: "Wan Chai", expanded: "Wan Chai (灣仔)" },
+  "hong-kong/tst": { nav: "TST", expanded: "Tsim Sha Tsui (尖沙咀)" },
+  "hong-kong/wan-chai": { nav: "Wan Chai", expanded: "Wan Chai (灣仔)" },
 };
 
-export function districtNavLabel(slug: string, fallback: string): string {
-  return DISTRICT_PUBLIC_LABELS[slug]?.nav ?? fallback;
+export function districtNavLabel(countrySlug: string, districtSlug: string, fallback: string): string {
+  return DISTRICT_PUBLIC_LABELS[`${countrySlug}/${districtSlug}`]?.nav ?? fallback;
 }
 
-export function districtExpandedLabel(slug: string, fallback: string): string {
-  return DISTRICT_PUBLIC_LABELS[slug]?.expanded ?? fallback;
+export function districtExpandedLabel(countrySlug: string, districtSlug: string, fallback: string): string {
+  return DISTRICT_PUBLIC_LABELS[`${countrySlug}/${districtSlug}`]?.expanded ?? fallback;
 }

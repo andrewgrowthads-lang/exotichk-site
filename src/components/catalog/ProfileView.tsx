@@ -1,6 +1,7 @@
 import type { LocaleId } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
-import { formatHkd } from "@/lib/formatPrice";
+import { resolveCurrency } from "@/lib/countryPresets";
+import { formatPrice } from "@/lib/formatPrice";
 import { localizeAttribute, localizeLanguage, localizeNationality, pickLocalizedText } from "@/lib/localize";
 import { absoluteUrl, countryPath, districtPath, homePath, profilePath } from "@/lib/urls";
 import { hasDirectContact } from "@/lib/contact";
@@ -54,7 +55,7 @@ export function ProfileView({
   ];
   const languages = (profile.languages ?? []).map((value) => localizeLanguage(value, locale));
   const attributes = (profile.attributes ?? []).map((value) => localizeAttribute(value, locale));
-  const price = formatHkd(profile.price);
+  const price = formatPrice(profile.price, resolveCurrency(country));
   // No WhatsApp and no Telegram means the sticky bar would render as an
   // empty strip pinned across the bottom of the screen, with `pb-24`
   // reserving room for it. Both are therefore conditional on the same flag.

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { LocaleId } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
+import { resolveCurrency } from "@/lib/countryPresets";
 import { districtNavLabel } from "@/lib/districtLabels";
-import { formatHkd } from "@/lib/formatPrice";
+import { formatPrice } from "@/lib/formatPrice";
 import { localizeNationality, pickLocalizedText } from "@/lib/localize";
 import { profilePath } from "@/lib/urls";
 import { CatalogPhoto } from "@/components/media/CatalogPhoto";
@@ -21,9 +22,13 @@ export function ProfileCard({
   priority?: boolean;
   hideDistrict?: boolean;
 }) {
-  const districtTitle = districtNavLabel(profile.district.slug, pickLocalizedText(profile.district.title, locale));
+  const districtTitle = districtNavLabel(
+    profile.country.slug,
+    profile.district.slug,
+    pickLocalizedText(profile.district.title, locale),
+  );
   const nationality = profile.nationality ? localizeNationality(profile.nationality, locale) : null;
-  const price = formatHkd(profile.price);
+  const price = formatPrice(profile.price, resolveCurrency(profile.country));
   const meta = [
     !hideDistrict ? districtTitle : null,
     profile.age ? String(profile.age) : null,

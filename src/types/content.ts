@@ -33,7 +33,10 @@ export interface CountrySummary {
   status: CountryStatus;
   title: LocalizedText;
   intro: LocalizedText;
+  /** Background / hero image. Falls back to the bundled photo for the slug, then a neutral backdrop. */
   image?: SanityImage;
+  /** ISO code (`HKD`, `SGD`). See `resolveCurrency` for documents that predate the field. */
+  currency?: string;
   sortOrder: number;
   updatedAt: string;
 }
@@ -42,6 +45,8 @@ export interface CountryDetail extends CountrySummary {
   body?: LocalizedText;
   seoTitle?: LocalizedText;
   seoDescription?: LocalizedText;
+  /** This country's managers only — see `resolveCountryContact`. */
+  contact: ContactLinks;
 }
 
 export interface DistrictSummary {
@@ -75,12 +80,12 @@ export interface ProfileSummary {
   seoNoIndex: boolean;
   sortOrder: number;
   updatedAt: string;
-  country: { slug: string };
+  country: { slug: string; currency?: string };
   district: { slug: string; title: LocalizedText };
   age?: number;
   height?: number;
   nationality?: string;
-  /** Numeric HKD amount. Formatted on the site as `HK$ 1500`. */
+  /** Amount in the profile's country currency, formatted as `HK$ 1500` / `S$ 1500`. */
   price?: number;
 }
 
@@ -123,5 +128,6 @@ export interface SiteSettings {
   defaultSeoTitle?: LocalizedText;
   defaultSeoDescription?: LocalizedText;
   defaultSocialImage?: SanityImage;
+  /** Pre-multi-country contacts. Hong Kong fallback only — see `LEGACY_CONTACT_COUNTRY_SLUG`. */
   contact: ContactLinks;
 }

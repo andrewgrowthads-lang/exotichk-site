@@ -7,3 +7,13 @@ Author: Benh LIEU SONG
 License: CC BY-SA 4.0
 https://creativecommons.org/licenses/by-sa/4.0/
 https://commons.wikimedia.org/wiki/File:Hong_Kong_Harbour_Night_2019-06-11.jpg
+
+singapore-marina-bay-night.jpg (source master: 1920x1080 Commons rendition, cropped to 1920x908 — sky above the skyline removed)
+singapore-marina-bay-night-{1024,1280,1600,1920}.{avif,webp,jpg} — resized derivatives
+singapore-marina-bay-night-portrait.{avif,webp,jpg} — 564x908 centre crop for portrait phones
+Source: Wikimedia Commons
+File: Singapore (SG), Marina Bay, Night View -- 2019 -- 4682.jpg
+Author: Dietmar Rabich
+License: CC BY-SA 4.0 (cropped and resized)
+https://creativecommons.org/licenses/by-sa/4.0/
+https://commons.wikimedia.org/wiki/File:Singapore_(SG),_Marina_Bay,_Night_View_--_2019_--_4682.jpg

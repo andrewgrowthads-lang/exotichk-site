@@ -7,7 +7,17 @@ const CONTACT_HOSTS = {
   telegramChannelUrl: "t.me",
 } as const;
 
-type ContactSource = "profile" | "siteSettings";
+type ContactSource = "profile" | "country" | "siteSettings";
+
+/**
+ * Before multi-country support, the only contacts lived on the
+ * `siteSettings` singleton and every page used them. They belong to Hong
+ * Kong, so they still apply there — and only there — until the Hong Kong
+ * country document carries contacts of its own (see
+ * `scripts/migrate-multi-country.ts`). No other country can ever reach
+ * them, which is what keeps Hong Kong managers off Singapore pages.
+ */
+export const LEGACY_CONTACT_COUNTRY_SLUG = "hong-kong";
 
 /**
  * A link an editor actually filled in but that fails the host check below
@@ -57,18 +67,39 @@ function safeContactUrl(
   }
 }
 
-/** Profile-level overrides win; otherwise fall back to site-wide defaults. */
-export function resolveContact(profileContact: ContactLinks, siteContact: ContactLinks | undefined): ContactLinks {
+function hasAnyContact(contact: ContactLinks | undefined): boolean {
+  return Boolean(contact?.telegramUrl || contact?.whatsappUrl || contact?.telegramChannelUrl);
+}
+
+function safeContactLinks(contact: ContactLinks | undefined, source: ContactSource): ContactLinks {
   return {
-    telegramUrl:
-      safeContactUrl(profileContact.telegramUrl, "telegramUrl", "profile") ||
-      safeContactUrl(siteContact?.telegramUrl, "telegramUrl", "siteSettings"),
-    whatsappUrl:
-      safeContactUrl(profileContact.whatsappUrl, "whatsappUrl", "profile") ||
-      safeContactUrl(siteContact?.whatsappUrl, "whatsappUrl", "siteSettings"),
-    telegramChannelUrl:
-      safeContactUrl(profileContact.telegramChannelUrl, "telegramChannelUrl", "profile") ||
-      safeContactUrl(siteContact?.telegramChannelUrl, "telegramChannelUrl", "siteSettings"),
+    telegramUrl: safeContactUrl(contact?.telegramUrl, "telegramUrl", source),
+    whatsappUrl: safeContactUrl(contact?.whatsappUrl, "whatsappUrl", source),
+    telegramChannelUrl: safeContactUrl(contact?.telegramChannelUrl, "telegramChannelUrl", source),
+  };
+}
+
+/**
+ * The manager contacts for one country. A country's own fields are used
+ * as a set: once any of them is filled in, an empty one means "hide that
+ * button", never "borrow it from somewhere else".
+ */
+export function resolveCountryContact(
+  country: { slug: string; contact?: ContactLinks },
+  legacySiteContact: ContactLinks | undefined,
+): ContactLinks {
+  if (hasAnyContact(country.contact)) return safeContactLinks(country.contact, "country");
+  if (country.slug === LEGACY_CONTACT_COUNTRY_SLUG) return safeContactLinks(legacySiteContact, "siteSettings");
+  return {};
+}
+
+/** Explicit profile-level overrides win field by field; otherwise the profile's own country's contacts. */
+export function resolveContact(profileContact: ContactLinks, countryContact: ContactLinks): ContactLinks {
+  const profile = safeContactLinks(profileContact, "profile");
+  return {
+    telegramUrl: profile.telegramUrl || countryContact.telegramUrl,
+    whatsappUrl: profile.whatsappUrl || countryContact.whatsappUrl,
+    telegramChannelUrl: profile.telegramChannelUrl || countryContact.telegramChannelUrl,
   };
 }
 

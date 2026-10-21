@@ -40,15 +40,9 @@ export function CountryView({
         tagline={dictionary.common.tagline}
         locale={locale}
         locationAs="h1"
-        showFlag={country.slug === "hong-kong"}
+        countrySlug={country.slug}
       >
-        <DistrictChips
-          countrySlug={country.slug}
-          districts={districts}
-          locale={locale}
-          dictionary={dictionary}
-          allHref={countryPath(country.slug, locale)}
-        />
+        <DistrictChips countrySlug={country.slug} districts={districts} locale={locale} dictionary={dictionary} />
         <div className="mt-3 sm:mt-3.5">
           <ProfileGrid profiles={profiles} locale={locale} dictionary={dictionary} priorityFirst />
         </div>

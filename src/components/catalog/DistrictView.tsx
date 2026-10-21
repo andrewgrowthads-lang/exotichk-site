@@ -29,7 +29,7 @@ export function DistrictView({
 }) {
   const countryTitle = pickLocalizedText(country.title, locale);
   const districtTitle = pickLocalizedText(district.title, locale);
-  const districtLine = districtExpandedLabel(district.slug, districtTitle);
+  const districtLine = districtExpandedLabel(country.slug, district.slug, districtTitle);
   const breadcrumbs = [
     { label: dictionary.common.home, href: homePath(locale) },
     { label: countryTitle, href: countryPath(country.slug, locale) },
@@ -47,7 +47,7 @@ export function DistrictView({
         locale={locale}
         locationAs="p"
         contextAs="h1"
-        showFlag={country.slug === "hong-kong"}
+        countrySlug={country.slug}
       >
         <DistrictChips
           countrySlug={country.slug}
@@ -55,7 +55,6 @@ export function DistrictView({
           locale={locale}
           dictionary={dictionary}
           active={district.slug}
-          allHref={countryPath(country.slug, locale)}
         />
         <div className="mt-3 sm:mt-3.5">
           <ProfileGrid profiles={profiles} locale={locale} dictionary={dictionary} hideDistrict priorityFirst />

@@ -14,10 +14,16 @@ interface LocationSeoInput {
  * available for editorial nuance; these templates deliberately stay short
  * and factual rather than manufacturing keyword variants.
  */
-export function homeSeoTitle({ locale, siteName, country }: LocationSeoInput): string {
+/**
+ * `countries` are the titles available in the page's own language, so the
+ * Chinese homepage never advertises a country it can only link to in
+ * English. With none, the title falls back to the brand alone.
+ */
+export function homeSeoTitle({ locale, siteName, countries }: { locale: LocaleId; siteName: string; countries: string[] }): string {
+  if (countries.length === 0) return siteName;
   return locale === "zh-Hant-HK"
-    ? `${siteName}｜${country}個人檔案`
-    : `${siteName} | ${country} Profiles`;
+    ? `${siteName}｜${countries.join("及")}個人檔案`
+    : `${siteName} | ${countries.join(" & ")} Profiles`;
 }
 
 export function countrySeoTitle({ locale, siteName, country }: LocationSeoInput): string {
@@ -38,9 +44,14 @@ export function profileSeoTitle({ locale, siteName, country, district, profile }
     : `${profile} in ${district}, ${country} | ${siteName}`;
 }
 
-/** Homepage copy must not duplicate the country page's CMS intro verbatim. */
-export function homeSeoDescription(locale: LocaleId, country: string): string {
-  return locale === "zh-Hant-HK"
-    ? `瀏覽${country}個人檔案，按地區探索，並直接透過 WhatsApp 或 Telegram 聯絡客戶經理。`
-    : `Browse profiles across ${country}, explore by district, and contact the manager directly on WhatsApp or Telegram.`;
+/** Homepage copy must not duplicate any country page's CMS intro verbatim. */
+export function homeSeoDescription(locale: LocaleId, countries: string[]): string {
+  if (locale === "zh-Hant-HK") {
+    return countries.length > 0
+      ? `選擇${countries.join("或")}，按地區瀏覽個人檔案，並直接透過 WhatsApp 或 Telegram 聯絡當地客戶經理。`
+      : "選擇地區，按地區瀏覽個人檔案，並直接透過 WhatsApp 或 Telegram 聯絡當地客戶經理。";
+  }
+  return countries.length > 0
+    ? `Choose ${countries.join(" or ")} to browse profiles by district and contact the local manager directly on WhatsApp or Telegram.`
+    : "Choose your location to browse profiles by district and contact the local manager directly on WhatsApp or Telegram.";
 }
