@@ -13,7 +13,10 @@ import { immutablePublishedCountry } from "@/sanity/schemaTypes/validators/immut
 import type { ContactLinks } from "@/types/content";
 import { immutablePublishedSlug } from "@/sanity/schemaTypes/validators/immutablePublishedSlug";
 import { uniqueInternalName } from "@/sanity/schemaTypes/validators/uniqueInternalName";
-import { uniqueSlugWithinCountry } from "@/sanity/schemaTypes/validators/uniqueSlugWithinCountry";
+import {
+  slugIsUniqueWithinCountry,
+  uniqueSlugWithinCountry,
+} from "@/sanity/schemaTypes/validators/uniqueSlugWithinCountry";
 
 interface ProfileDraft {
   status?: string;
@@ -159,7 +162,11 @@ export const profile = defineType({
       title: "Slug",
       type: "slug",
       hidden,
-      options: { source: "displayName", maxLength: 64 },
+      options: {
+        source: "displayName",
+        maxLength: 64,
+        isUnique: slugIsUniqueWithinCountry("profile"),
+      },
       validation: (rule) =>
         immutablePublishedSlug()(uniqueSlugWithinCountry("profile")(rule.required())),
     }),

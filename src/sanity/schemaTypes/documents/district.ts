@@ -3,7 +3,10 @@ import { RESERVED_SEGMENTS } from "@/lib/slugs";
 import { blockArchiveWithActiveProfiles } from "@/sanity/schemaTypes/validators/archiveGuard";
 import { districtCountryHasNoProfileConflicts } from "@/sanity/schemaTypes/validators/districtCountryHasNoProfileConflicts";
 import { immutablePublishedSlug } from "@/sanity/schemaTypes/validators/immutablePublishedSlug";
-import { uniqueSlugWithinCountry } from "@/sanity/schemaTypes/validators/uniqueSlugWithinCountry";
+import {
+  slugIsUniqueWithinCountry,
+  uniqueSlugWithinCountry,
+} from "@/sanity/schemaTypes/validators/uniqueSlugWithinCountry";
 
 export const district = defineType({
   name: "district",
@@ -44,6 +47,7 @@ export const district = defineType({
           return draft.title?.en || draft.internalName || "";
         },
         maxLength: 64,
+        isUnique: slugIsUniqueWithinCountry("district"),
       },
       validation: (rule) =>
         immutablePublishedSlug()(
