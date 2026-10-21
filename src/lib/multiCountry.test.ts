@@ -38,6 +38,12 @@ test("currency and preset lookups ignore inherited object keys", () => {
   assert.equal(countryPhoto("__proto__"), undefined);
 });
 
+test("Singapore uses the centred local Marina Bay night backdrop", () => {
+  const photo = countryPhoto("singapore");
+  assert.equal(photo?.base, "/atmosphere/singapore-marina-bay-night");
+  assert.equal(photo?.objectPosition, "center center");
+});
+
 test("Hong Kong keeps the legacy site-wide contacts until it has its own", () => {
   assert.deepEqual(resolveCountryContact({ slug: "hong-kong", contact: {} }, HK_LEGACY), HK_LEGACY);
   assert.deepEqual(resolveCountryContact({ slug: "hong-kong" }, HK_LEGACY), HK_LEGACY);

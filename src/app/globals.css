@@ -84,7 +84,7 @@ body::after {
 }
 
 /*
- * Fixed, viewport-covering Hong Kong night layer (see SiteAtmosphere).
+ * Fixed, viewport-covering country night layer (see SiteAtmosphere).
  * Cover-crop the photo; darken it in CSS so the city stays atmospheric
  * without a hard edge into flat black as the page grows. Sized with the
  * large viewport height (see the note above `body::before`) so the crop
@@ -142,6 +142,25 @@ body::after {
     radial-gradient(ellipse 55% 40% at 50% 100%, rgba(48, 12, 58, 0.5), transparent 70%);
 }
 
+/*
+ * Singapore keeps the Marina Bay skyline visible beneath a cooler
+ * violet/magenta nightlife wash. This modifier is country-specific:
+ * Hong Kong retains the established overlay above.
+ */
+.site-atmosphere--singapore .site-atmosphere__overlay {
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(5, 3, 12, 0.58) 0%,
+      rgba(5, 3, 12, 0.65) 34%,
+      rgba(5, 3, 10, 0.76) 68%,
+      rgba(4, 2, 8, 0.86) 100%
+    ),
+    radial-gradient(ellipse 92% 58% at 82% 8%, rgba(126, 58, 242, 0.2), transparent 60%),
+    radial-gradient(ellipse 72% 52% at 8% 72%, rgba(255, 45, 138, 0.24), transparent 64%),
+    radial-gradient(ellipse 58% 42% at 50% 100%, rgba(48, 12, 58, 0.48), transparent 72%);
+}
+
 .site-atmosphere--profile .site-atmosphere__overlay {
   background-image:
     linear-gradient(
@@ -154,6 +173,20 @@ body::after {
     radial-gradient(ellipse 80% 50% at 78% 10%, rgba(255, 45, 138, 0.14), transparent 56%),
     radial-gradient(ellipse 65% 48% at 8% 70%, rgba(92, 18, 78, 0.36), transparent 62%),
     radial-gradient(ellipse 50% 38% at 50% 100%, rgba(36, 8, 42, 0.48), transparent 70%);
+}
+
+.site-atmosphere--singapore.site-atmosphere--profile .site-atmosphere__overlay {
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(5, 3, 12, 0.7) 0%,
+      rgba(5, 3, 12, 0.76) 38%,
+      rgba(5, 3, 10, 0.84) 70%,
+      rgba(4, 2, 8, 0.9) 100%
+    ),
+    radial-gradient(ellipse 86% 54% at 80% 10%, rgba(126, 58, 242, 0.16), transparent 58%),
+    radial-gradient(ellipse 68% 50% at 8% 70%, rgba(255, 45, 138, 0.2), transparent 64%),
+    radial-gradient(ellipse 52% 40% at 50% 100%, rgba(36, 8, 42, 0.46), transparent 72%);
 }
 
 .hide-scrollbar {

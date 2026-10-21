@@ -41,7 +41,7 @@ const COUNTRY_PRESETS: Record<string, CountryPreset> = {
     flag: "/flags/singapore.svg",
     photo: {
       base: "/atmosphere/singapore-marina-bay-night",
-      objectPosition: "center 55%",
+      objectPosition: "center center",
       credit: { author: "Dietmar Rabich", ...CC_BY_SA_4 },
     },
   },

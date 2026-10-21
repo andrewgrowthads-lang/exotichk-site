@@ -36,9 +36,10 @@ export function SiteAtmosphere({
   const fallback = cmsImage ? undefined : countryPhoto(countrySlug);
   const priority = intensity === "catalog";
   const lqip = imageLqip(cmsImage);
+  const countryClass = countrySlug === "singapore" ? " site-atmosphere--singapore" : "";
 
   return (
-    <div className={`site-atmosphere site-atmosphere--${intensity}`}>
+    <div className={`site-atmosphere site-atmosphere--${intensity}${countryClass}`}>
       <div className="absolute inset-0" aria-hidden="true">
         {cmsImage ? (
           <Image
