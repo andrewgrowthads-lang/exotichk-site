@@ -67,8 +67,9 @@ export function LocalPhoto({
 }
 
 export function PhotoCredit({ photos, className }: { photos: AtmospherePhoto[]; className?: string }) {
-  const authors = [...new Set(photos.map((photo) => photo.credit.author))];
-  const licenses = [...new Map(photos.map((photo) => [photo.credit.license, photo.credit.licenseUrl])).entries()];
+  const credits = photos.flatMap((photo) => (photo.credit ? [photo.credit] : []));
+  const authors = [...new Set(credits.map((credit) => credit.author))];
+  const licenses = [...new Map(credits.map((credit) => [credit.license, credit.licenseUrl])).entries()];
   if (authors.length === 0) return null;
   return (
     <p className={className}>

@@ -15,7 +15,8 @@ export interface AtmospherePhoto {
   base: string;
   /** CSS `object-position` for the landscape frame. */
   objectPosition: string;
-  credit: { author: string; license: string; licenseUrl: string };
+  /** Present only when the source requires a visible attribution. */
+  credit?: { author: string; license: string; licenseUrl: string };
 }
 
 interface CountryPreset {
@@ -42,7 +43,6 @@ const COUNTRY_PRESETS: Record<string, CountryPreset> = {
     photo: {
       base: "/atmosphere/singapore-marina-bay-night",
       objectPosition: "center center",
-      credit: { author: "Dietmar Rabich", ...CC_BY_SA_4 },
     },
   },
 };
