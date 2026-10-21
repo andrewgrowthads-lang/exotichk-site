@@ -15,7 +15,7 @@ export const district = defineType({
       title: "Country",
       type: "reference",
       to: [{ type: "country" }],
-      options: { disableNew: true },
+      options: { disableNew: true, filter: "useDistricts != false" },
       validation: (rule) => districtCountryHasNoProfileConflicts()(rule.required()),
     }),
     defineField({

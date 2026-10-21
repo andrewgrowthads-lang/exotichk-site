@@ -136,9 +136,25 @@ Read-only; includes drafts and image assets. Keep the file outside the repo
 
 ## 4. How to
 
-- **Publish a Singapore profile:** Studio → Profiles → Singapore → + → fill Name, District, … Price, Description, Photos → Publish Profile (or Publish English only).
+- **Publish a Singapore profile:** Studio → Profiles → Singapore → + → fill Name, … Price, Description, Photos → Publish Profile (or Publish English only). No District field: Singapore has "Use districts" off.
 - **Change Singapore contacts:** Studio → Country settings → Singapore → Contacts → edit → Publish. Live within seconds (Studio refresh + webhook). Empty field = button hidden.
-- **Add a Singapore district:** Studio → Districts → Singapore → + → Title, Internal name, Slug (Generate), Intro → Publish. Its tab appears once it has a visible profile.
+
+### Countries without districts
+
+`country.useDistricts` (Country settings → Settings → Use districts) is on
+unless explicitly switched off, so Hong Kong is unaffected. Singapore has
+it off. When off:
+
+- District is optional (`districtRequiredByCountry`) and hidden on the
+  profile form; the country is not offered for new districts.
+- Every visible profile of the country is listed on `/{country}/`; no
+  district tabs; the empty state does not suggest another district.
+- Queries treat the profile's district as `null` (no district label on
+  cards, no district breadcrumb; "back" goes to the country page;
+  title `Name in Singapore | ExoticHK`). Profile URLs never contained the
+  district, so they are unaffected.
+- No district pages or sitemap entries exist for the country, even if a
+  district document was left behind.
 
 ## 5. Verification (local, 2026-10-21)
 

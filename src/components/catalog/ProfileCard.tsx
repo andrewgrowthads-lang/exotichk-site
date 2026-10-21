@@ -22,11 +22,9 @@ export function ProfileCard({
   priority?: boolean;
   hideDistrict?: boolean;
 }) {
-  const districtTitle = districtNavLabel(
-    profile.country.slug,
-    profile.district.slug,
-    pickLocalizedText(profile.district.title, locale),
-  );
+  const districtTitle = profile.district
+    ? districtNavLabel(profile.country.slug, profile.district.slug, pickLocalizedText(profile.district.title, locale))
+    : null;
   const nationality = profile.nationality ? localizeNationality(profile.nationality, locale) : null;
   const price = formatPrice(profile.price, resolveCurrency(profile.country));
   const meta = [

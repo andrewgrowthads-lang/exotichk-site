@@ -90,6 +90,15 @@ export const country = defineType({
       validation: (rule) => rule.required(),
     }),
     defineField({
+      name: "useDistricts",
+      title: "Use districts",
+      description:
+        "On: profiles need a district and the catalogue shows district tabs. Off: no districts — every profile is listed directly on the country page.",
+      type: "boolean",
+      group: "settings",
+      initialValue: true,
+    }),
+    defineField({
       name: "internalName",
       title: "Internal name (Studio only)",
       type: "string",

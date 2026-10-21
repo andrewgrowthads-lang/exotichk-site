@@ -154,7 +154,7 @@ export async function loadCountryPage(countrySlug: string, locale: LocaleId): Pr
   if (!visibleLocales.includes(locale)) notFound();
 
   const [districts, profiles] = await Promise.all([
-    getDistrictsForCountry(countrySlug),
+    country.useDistricts ? getDistrictsForCountry(countrySlug) : [],
     getProfilesForCountry(countrySlug),
   ]);
   const visibleProfiles = onlyVisibleProfiles(profiles, locale);

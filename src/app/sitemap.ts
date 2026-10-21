@@ -76,8 +76,9 @@ function groupProfiles(profiles: ProfileIndexEntry[]) {
 
   for (const profile of profiles) {
     const countryKey = profile.country.slug;
-    const districtKey = `${countryKey}/${profile.district.slug}`;
     byCountry.set(countryKey, [...(byCountry.get(countryKey) ?? []), profile]);
+    if (!profile.district) continue;
+    const districtKey = `${countryKey}/${profile.district.slug}`;
     byDistrict.set(districtKey, [...(byDistrict.get(districtKey) ?? []), profile]);
   }
 

@@ -8,12 +8,15 @@ export function ProfileGrid({
   locale,
   dictionary,
   hideDistrict = false,
+  hasDistricts = true,
   priorityFirst = false,
 }: {
   profiles: ProfileSummary[];
   locale: LocaleId;
   dictionary: Dictionary;
   hideDistrict?: boolean;
+  /** `false` on catalogues of countries without districts, so the empty state doesn't suggest one. */
+  hasDistricts?: boolean;
   /**
    * Only true on pages where this grid's first card is the actual LCP
    * candidate (home/country/district listings). Profile pages already
@@ -30,7 +33,9 @@ export function ProfileGrid({
     return (
       <div className="rounded-xl border border-[var(--accent)]/20 bg-[var(--surface)] px-4 py-10 text-center shadow-[0_0_40px_rgba(255,45,138,0.08)]">
         <p className="text-[14px] text-[var(--foreground)]">{dictionary.listing.empty}</p>
-        <p className="mt-1 text-[13px] text-[var(--muted)]">{dictionary.listing.emptyHint}</p>
+        <p className="mt-1 text-[13px] text-[var(--muted)]">
+          {hasDistricts ? dictionary.listing.emptyHint : dictionary.listing.emptyHintNoDistricts}
+        </p>
       </div>
     );
   }

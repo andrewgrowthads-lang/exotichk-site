@@ -28,7 +28,8 @@ export interface ProfileContext {
   /** Public display name, so reports are readable without joining on the id. */
   profileName: string;
   country: string;
-  district: string;
+  /** Omitted for countries without districts. */
+  district?: string;
   locale: LocaleId;
 }
 
@@ -98,9 +99,12 @@ function readUtm(): Record<string, string> {
  * or from an effect, and it must never be the thing that throws on the way
  * to WhatsApp or Telegram.
  */
-function emit(name: string, properties: Record<string, string>): void {
+function emit(name: string, properties: Record<string, string | undefined>): void {
   try {
-    track(name, { ...properties, ...readUtm() });
+    const defined = Object.fromEntries(
+      Object.entries(properties).filter((entry): entry is [string, string] => entry[1] !== undefined),
+    );
+    track(name, { ...defined, ...readUtm() });
   } catch {
     // Analytics is never allowed to break navigation or rendering.
   }

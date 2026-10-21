@@ -42,9 +42,17 @@ export function CountryView({
         locationAs="h1"
         countrySlug={country.slug}
       >
-        <DistrictChips countrySlug={country.slug} districts={districts} locale={locale} dictionary={dictionary} />
-        <div className="mt-3 sm:mt-3.5">
-          <ProfileGrid profiles={profiles} locale={locale} dictionary={dictionary} priorityFirst />
+        {country.useDistricts && (
+          <DistrictChips countrySlug={country.slug} districts={districts} locale={locale} dictionary={dictionary} />
+        )}
+        <div className={country.useDistricts ? "mt-3 sm:mt-3.5" : undefined}>
+          <ProfileGrid
+            profiles={profiles}
+            locale={locale}
+            dictionary={dictionary}
+            hasDistricts={country.useDistricts}
+            priorityFirst
+          />
         </div>
         {pickLocalizedText(country.intro, locale) && (
           <p className="mt-10 max-w-2xl text-[13px] leading-relaxed text-[var(--muted)] [text-shadow:0_1px_14px_rgba(0,0,0,0.85)]">

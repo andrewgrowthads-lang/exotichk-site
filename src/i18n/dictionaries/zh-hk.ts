@@ -29,6 +29,7 @@ const dictionary: Dictionary = {
   listing: {
     empty: "此處暫時沒有可顯示的檔案。",
     emptyHint: "可以瀏覽其他地區，或稍後再回來查看。",
+    emptyHintNoDistricts: "請稍後再回來查看。",
   },
   profile: {
     unavailableBadge: "暫時未能提供服務",

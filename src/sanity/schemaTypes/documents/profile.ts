@@ -7,6 +7,7 @@ import { ProfileDocumentInput } from "@/sanity/components/ProfileDocumentInput";
 import { generateInternalId } from "@/sanity/lib/generateInternalId";
 import { validateContactUrl } from "@/sanity/schemaTypes/validators/contactUrl";
 import { districtBelongsToCountry } from "@/sanity/schemaTypes/validators/districtBelongsToCountry";
+import { districtRequiredByCountry } from "@/sanity/schemaTypes/validators/districtRequiredByCountry";
 import { immutableInternalName } from "@/sanity/schemaTypes/validators/immutableInternalName";
 import { immutablePublishedCountry } from "@/sanity/schemaTypes/validators/immutablePublishedCountry";
 import type { ContactLinks } from "@/types/content";
@@ -57,7 +58,7 @@ export const profile = defineType({
     defineField({
       name: "district",
       title: "District",
-      description: "Only districts of the selected country are listed.",
+      description: "Only districts of the selected country are listed. Not used for countries without districts.",
       type: "reference",
       to: [{ type: "district" }],
       options: {
@@ -73,7 +74,7 @@ export const profile = defineType({
           };
         },
       },
-      validation: (rule) => districtBelongsToCountry()(rule.required()),
+      validation: (rule) => districtBelongsToCountry()(districtRequiredByCountry()(rule)),
     }),
     defineField({
       name: "age",

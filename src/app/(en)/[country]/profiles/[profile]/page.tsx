@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const dictionary = getDictionary(LOCALE);
   const title = pickLocalizedText(profile.h1Override, LOCALE) || profile.displayName;
   const countryTitle = pickLocalizedText(country.title, LOCALE);
-  const districtTitle = pickLocalizedText(profile.district.title, LOCALE);
+  const districtTitle = profile.district ? pickLocalizedText(profile.district.title, LOCALE) : undefined;
   return buildPageMetadata({
     title:
       pickLocalizedText(profile.seoTitle, LOCALE) ||

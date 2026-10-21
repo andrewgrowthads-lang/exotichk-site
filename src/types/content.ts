@@ -37,6 +37,8 @@ export interface CountrySummary {
   image?: SanityImage;
   /** ISO code (`HKD`, `SGD`). See `resolveCurrency` for documents that predate the field. */
   currency?: string;
+  /** `false` when "Use districts" is switched off: no district pages or tabs, profiles listed directly. */
+  useDistricts: boolean;
   sortOrder: number;
   updatedAt: string;
 }
@@ -81,7 +83,8 @@ export interface ProfileSummary {
   sortOrder: number;
   updatedAt: string;
   country: { slug: string; currency?: string };
-  district: { slug: string; title: LocalizedText };
+  /** `null` for countries without districts. */
+  district: { slug: string; title: LocalizedText } | null;
   age?: number;
   height?: number;
   nationality?: string;
@@ -100,7 +103,7 @@ export interface ProfileIndexEntry {
   updatedAt: string;
   country: { slug: string };
   /** Only the slug — the sitemap needs it to count a district's profiles, not to render anything. */
-  district: { slug: string };
+  district: { slug: string } | null;
 }
 
 export interface ProfileDetail extends ProfileSummary {

@@ -29,8 +29,14 @@ import type {
  */
 const CATALOG_TAG = "catalog";
 const REVALIDATE_SECONDS = 30;
-const profileRelationshipFilter =
-  "defined(country->slug.current) && defined(district->slug.current) && district->country._ref == country._ref";
+/**
+ * A country with "Use districts" off lists every profile directly, and its
+ * profiles carry no district on the site even if one was left on the
+ * document. Unset counts as on, so Hong Kong keeps requiring a district.
+ */
+const countryWithoutDistricts = "country->useDistricts == false";
+const profileRelationshipFilter = `defined(country->slug.current) && (${countryWithoutDistricts} || (defined(district->slug.current) && district->country._ref == country._ref))`;
+const districtCountryFilter = "country->useDistricts != false";
 
 function fetchQuery<T>(query: string, params: Record<string, unknown> = {}): Promise<T> {
   return sanityClient.fetch<T>(query, params, {
@@ -62,6 +68,7 @@ const countryProjection = `{
   body ${localizedTextProjection},
   image ${imageProjection},
   currency,
+  "useDistricts": useDistricts != false,
   sortOrder,
   "updatedAt": _updatedAt,
   seoTitle ${localizedTextProjection},
@@ -96,7 +103,7 @@ const profileSummaryProjection = `{
   sortOrder,
   "updatedAt": _updatedAt,
   "country": country->{ "slug": slug.current, currency },
-  "district": district->{ "slug": slug.current, title ${localizedTextProjection} },
+  "district": select(${countryWithoutDistricts} => null, district->{ "slug": slug.current, title ${localizedTextProjection} }),
   age,
   height,
   nationality,
@@ -131,7 +138,7 @@ const profileIndexProjection = `{
   "seoNoIndex": coalesce(seoNoIndex, false),
   "updatedAt": _updatedAt,
   "country": country->{ "slug": slug.current },
-  "district": district->{ "slug": slug.current },
+  "district": select(${countryWithoutDistricts} => null, district->{ "slug": slug.current }),
 }`;
 
 /** Featured profiles surface first within their listing; everything
@@ -168,7 +175,7 @@ export async function getCountryBySlug(slug: string): Promise<CountryDetail | nu
 
 export async function getDistrictsForCountry(countrySlug: string): Promise<DistrictSummary[]> {
   return fetchQuery<DistrictSummary[]>(
-    `*[_type == "district" && country->slug.current == $countrySlug && ${statusFilter(
+    `*[_type == "district" && country->slug.current == $countrySlug && ${districtCountryFilter} && ${statusFilter(
       "district",
     )}] | order(sortOrder asc) ${districtProjection}`,
     { countrySlug },
@@ -181,7 +188,7 @@ export async function getDistrictBySlug(
 ): Promise<DistrictDetail | null> {
   if (!isValidSlug(countrySlug) || !isValidSlug(districtSlug)) return null;
   return fetchQuery<DistrictDetail | null>(
-    `*[_type == "district" && slug.current == $districtSlug && country->slug.current == $countrySlug && ${statusFilter(
+    `*[_type == "district" && slug.current == $districtSlug && country->slug.current == $countrySlug && ${districtCountryFilter} && ${statusFilter(
       "district",
     )}][0] ${districtProjection}`,
     { countrySlug, districtSlug },
@@ -261,7 +268,7 @@ export async function getAllCountries(): Promise<CountrySummary[]> {
 
 export async function getAllDistricts(): Promise<DistrictSummary[]> {
   return fetchQuery<DistrictSummary[]>(
-    `*[_type == "district" && ${statusFilter("district")}] | order(sortOrder asc) ${districtProjection}`,
+    `*[_type == "district" && ${districtCountryFilter} && ${statusFilter("district")}] | order(sortOrder asc) ${districtProjection}`,
   );
 }
 

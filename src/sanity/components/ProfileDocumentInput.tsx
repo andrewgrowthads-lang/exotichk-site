@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Stack } from "@sanity/ui";
-import { set, unset, useFormValue, type ObjectInputProps } from "sanity";
+import { set, unset, useClient, useFormValue, type ObjectInputProps } from "sanity";
 import { deriveSummaryEn } from "@/sanity/lib/deriveSummary";
 import { slugifyName } from "@/sanity/lib/slugifyName";
 import { ProfilePhotosInput } from "@/sanity/components/ProfilePhotosInput";
@@ -12,10 +12,35 @@ interface LocaleText {
   zhHantHK?: string;
 }
 
+/** True once the selected country is known to have "Use districts" switched off. */
+function useCountryWithoutDistricts(countryRef: string | undefined): boolean {
+  const client = useClient({ apiVersion: "2026-01-01" });
+  const [loaded, setLoaded] = useState<{ ref: string; withoutDistricts: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!countryRef) return;
+    let cancelled = false;
+    client
+      .fetch<boolean | null>(`*[_id == $id][0].useDistricts`, { id: countryRef })
+      .then((useDistricts) => {
+        if (!cancelled) setLoaded({ ref: countryRef, withoutDistricts: useDistricts === false });
+      })
+      .catch(() => {
+        if (!cancelled) setLoaded({ ref: countryRef, withoutDistricts: false });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [client, countryRef]);
+
+  return Boolean(countryRef && loaded?.ref === countryRef && loaded.withoutDistricts);
+}
+
 /**
  * Auto slug and English summary; clears the district when the country
- * changes. Image fields are replaced by one photo tray; they remain on
- * the document.
+ * changes. District is hidden for countries without districts unless one
+ * is already set, so it stays visible and removable. Image fields are
+ * replaced by one photo tray; they remain on the document.
  */
 export function ProfileDocumentInput(props: ObjectInputProps) {
   const countryRef = (useFormValue(["country"]) as { _ref?: string } | undefined)?._ref;
@@ -67,8 +92,10 @@ export function ProfileDocumentInput(props: ObjectInputProps) {
     );
   }, [body?.en, displayName, summary?.en, summary?.zhHantHK, readOnly, onChange]);
 
+  const hideDistrict = useCountryWithoutDistricts(countryRef) && !districtRef;
   const members = props.members.filter((member) => {
     if (member.kind !== "field") return true;
+    if (hideDistrict && member.name === "district") return false;
     return member.name !== "mainImage" && member.name !== "gallery";
   });
 

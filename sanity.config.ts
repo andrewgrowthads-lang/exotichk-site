@@ -28,7 +28,11 @@ function byCountry(S: StructureBuilder, type: "profile" | "district", title: str
     .child(
       S.documentTypeList("country")
         .title(title)
-        .filter('_type == "country" && status == "active"')
+        .filter(
+          type === "district"
+            ? '_type == "country" && status == "active" && useDistricts != false'
+            : '_type == "country" && status == "active"',
+        )
         .defaultOrdering([{ field: "sortOrder", direction: "asc" }])
         .initialValueTemplates([])
         .child((countryId) =>

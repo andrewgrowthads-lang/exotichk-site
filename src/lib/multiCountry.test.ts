@@ -4,7 +4,7 @@ import { resolveContact, resolveCountryContact } from "./contact";
 import { countryFlagSrc, countryPhoto, resolveCurrency } from "./countryPresets";
 import { districtExpandedLabel, districtNavLabel } from "./districtLabels";
 import { formatPrice, isCurrencyCode } from "./formatPrice";
-import { homeSeoDescription, homeSeoTitle } from "./seo";
+import { homeSeoDescription, homeSeoTitle, profileSeoTitle } from "./seo";
 import { generateInternalId } from "../sanity/lib/generateInternalId";
 
 const HK_LEGACY = {
@@ -116,4 +116,15 @@ test("location page metadata lists only the countries available in that language
   assert.equal(homeSeoTitle({ locale: "zh-Hant-HK", siteName: "ExoticHK", countries: ["香港"] }), "ExoticHK｜香港個人檔案");
   assert.equal(homeSeoTitle({ locale: "en", siteName: "ExoticHK", countries: [] }), "ExoticHK");
   assert.match(homeSeoDescription("en", ["Hong Kong", "Singapore"]), /Hong Kong or Singapore/);
+});
+
+test("profile titles name the district only when the profile has one", () => {
+  const base = { siteName: "ExoticHK", profile: "Mia" };
+  assert.equal(
+    profileSeoTitle({ ...base, locale: "en", country: "Hong Kong", district: "TST" }),
+    "Mia in TST, Hong Kong | ExoticHK",
+  );
+  assert.equal(profileSeoTitle({ ...base, locale: "zh-Hant-HK", country: "香港", district: "尖沙咀" }), "Mia－尖沙咀，香港｜ExoticHK");
+  assert.equal(profileSeoTitle({ ...base, locale: "en", country: "Singapore" }), "Mia in Singapore | ExoticHK");
+  assert.equal(profileSeoTitle({ ...base, locale: "zh-Hant-HK", country: "新加坡" }), "Mia－新加坡｜ExoticHK");
 });

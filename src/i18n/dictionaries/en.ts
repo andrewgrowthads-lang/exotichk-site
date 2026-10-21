@@ -27,6 +27,7 @@ const dictionary = {
   listing: {
     empty: "No profiles are listed here at the moment.",
     emptyHint: "Try another district, or check back soon.",
+    emptyHintNoDistricts: "Please check back soon.",
   },
   profile: {
     unavailableBadge: "Temporarily unavailable",

@@ -39,6 +39,9 @@ export function districtSeoTitle({ locale, siteName, country, district }: Locati
 }
 
 export function profileSeoTitle({ locale, siteName, country, district, profile }: LocationSeoInput): string {
+  if (!district) {
+    return locale === "zh-Hant-HK" ? `${profile}－${country}｜${siteName}` : `${profile} in ${country} | ${siteName}`;
+  }
   return locale === "zh-Hant-HK"
     ? `${profile}－${district}，${country}｜${siteName}`
     : `${profile} in ${district}, ${country} | ${siteName}`;

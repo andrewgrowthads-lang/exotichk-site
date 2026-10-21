@@ -44,13 +44,15 @@ export function ProfileView({
 }) {
   const photos = profile.images ?? [];
   const countryTitle = pickLocalizedText(country.title, locale);
-  const districtTitle = pickLocalizedText(profile.district.title, locale);
+  const district = profile.district
+    ? { title: pickLocalizedText(profile.district.title, locale), href: districtPath(country.slug, profile.district.slug, locale) }
+    : null;
   const h1 = pickLocalizedText(profile.h1Override, locale) || profile.displayName;
-  const listHref = districtPath(country.slug, profile.district.slug, locale);
+  const listHref = district?.href ?? countryPath(country.slug, locale);
   const breadcrumbs = [
     { label: dictionary.common.home, href: homePath(locale) },
     { label: countryTitle, href: countryPath(country.slug, locale) },
-    { label: districtTitle, href: listHref },
+    ...(district ? [{ label: district.title, href: district.href }] : []),
     { label: profile.displayName, href: profilePath(country.slug, profile.slug, locale) },
   ];
   const languages = (profile.languages ?? []).map((value) => localizeLanguage(value, locale));
@@ -65,7 +67,7 @@ export function ProfileView({
     profile: profile.slug,
     profileName: profile.displayName,
     country: country.slug,
-    district: profile.district.slug,
+    district: profile.district?.slug,
     locale,
   };
 
@@ -95,13 +97,14 @@ export function ProfileView({
             <Link href={countryPath(country.slug, locale)} className="text-[var(--accent-soft)] underline-offset-2 hover:underline">
               {countryTitle}
             </Link>
-            <span aria-hidden="true"> · </span>
-            <Link
-              href={districtPath(country.slug, profile.district.slug, locale)}
-              className="text-[var(--accent-soft)] underline-offset-2 hover:underline"
-            >
-              {districtTitle}
-            </Link>
+            {district && (
+              <>
+                <span aria-hidden="true"> · </span>
+                <Link href={district.href} className="text-[var(--accent-soft)] underline-offset-2 hover:underline">
+                  {district.title}
+                </Link>
+              </>
+            )}
           </p>
           {profile.status === "temporarilyUnavailable" && (
             <div className="mt-3 rounded-lg border border-[var(--accent)]/20 bg-black/35 px-3 py-2 text-[13px] text-[var(--muted)]">
