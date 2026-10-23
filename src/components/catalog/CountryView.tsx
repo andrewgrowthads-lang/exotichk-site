@@ -4,6 +4,7 @@ import { pickLocalizedText } from "@/lib/localize";
 import { CatalogHero } from "@/components/catalog/CatalogHero";
 import { DistrictChips } from "@/components/catalog/DistrictChips";
 import { ProfileGrid } from "@/components/catalog/ProfileGrid";
+import { SingaporeQrPromo } from "@/components/catalog/SingaporeQrPromo";
 import { PageShell } from "@/components/layout/PageShell";
 import { JsonLd, breadcrumbJsonLd } from "@/components/seo/JsonLd";
 import { absoluteUrl, countryPath, homePath } from "@/lib/urls";
@@ -41,6 +42,7 @@ export function CountryView({
         locale={locale}
         locationAs="h1"
         countrySlug={country.slug}
+        headingAside={country.slug === "singapore" ? <SingaporeQrPromo /> : undefined}
       >
         {country.useDistricts && (
           <DistrictChips countrySlug={country.slug} districts={districts} locale={locale} dictionary={dictionary} />
