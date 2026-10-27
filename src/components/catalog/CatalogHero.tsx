@@ -38,7 +38,7 @@ export function CatalogHero({
   return (
     <div className="relative">
       <CatalogFrame className="pt-5 pb-0 sm:pt-7 lg:pt-8">
-        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-6">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-6 lg:flex-nowrap">
           <div className="flex items-center gap-2.5 sm:gap-3">
             <CountryFlag
               slug={countrySlug}

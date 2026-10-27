@@ -42,7 +42,7 @@ export function ProfileCard({
             locale={locale}
             fallbackAlt={profile.displayName}
             priority={priority}
-            sizes="(min-width: 1280px) 22vw, (min-width: 768px) 30vw, 50vw"
+            sizes="(min-width: 1024px) 16vw, (min-width: 768px) 25vw, 33vw"
             className="h-full w-full object-cover transition duration-500 md:group-hover:scale-[1.03]"
           />
           <div
