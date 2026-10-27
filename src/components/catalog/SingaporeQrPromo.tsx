@@ -31,10 +31,10 @@ export function CountryTelegramQrPromo({ countrySlug }: { countrySlug: string })
         src={promo.image}
         width={460}
         height={490}
-        sizes="(min-width: 640px) 136px, 112px"
+        sizes="(min-width: 640px) 168px, 136px"
         alt={`Telegram QR code for ${promo.title}`}
         unoptimized
-        className="h-auto w-28 shrink-0 rounded-2xl ring-1 ring-white/15 sm:w-[136px]"
+        className="h-auto w-[136px] shrink-0 rounded-2xl ring-1 ring-white/15 sm:w-[168px]"
       />
       <span className="min-w-0">
         <span className="block text-[10px] font-semibold tracking-[0.16em] text-white uppercase [text-shadow:0_1px_10px_rgba(0,0,0,0.75)] sm:text-[11px]">
