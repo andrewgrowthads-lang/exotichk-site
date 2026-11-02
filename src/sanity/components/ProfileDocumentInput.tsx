@@ -45,6 +45,7 @@ function useCountryWithoutDistricts(countryRef: string | undefined): boolean {
 export function ProfileDocumentInput(props: ObjectInputProps) {
   const countryRef = (useFormValue(["country"]) as { _ref?: string } | undefined)?._ref;
   const districtRef = (useFormValue(["district"]) as { _ref?: string } | undefined)?._ref;
+  const documentId = useFormValue(["_id"]) as string | undefined;
   const displayName = useFormValue(["displayName"]) as string | undefined;
   const slug = useFormValue(["slug"]) as { current?: string } | undefined;
   const body = useFormValue(["body"]) as LocaleText | undefined;
@@ -53,7 +54,9 @@ export function ProfileDocumentInput(props: ObjectInputProps) {
   const gallery = useFormValue(["gallery"]) as SanityImage[] | undefined;
   const { onChange, readOnly } = props;
   const lastAutoSlug = useRef<string | undefined>(undefined);
+  const lastAutoSlugSource = useRef<string | undefined>(undefined);
   const previousCountry = useRef(countryRef);
+  const client = useClient({ apiVersion: "2026-01-01" });
 
   // Only reacts to a change made in this form session, so opening an
   // existing profile never touches its district.
@@ -66,15 +69,47 @@ export function ProfileDocumentInput(props: ObjectInputProps) {
   }, [countryRef, districtRef, readOnly, onChange]);
 
   useEffect(() => {
-    if (readOnly) return;
-    const next = displayName?.trim() ? slugifyName(displayName) : "";
-    if (!next) return;
+    if (readOnly || !countryRef) return;
+    const base = displayName?.trim() ? slugifyName(displayName) : "";
+    if (!base) return;
     if (slug?.current && slug.current !== lastAutoSlug.current) return;
-    lastAutoSlug.current = next;
-    if (slug?.current !== next) {
-      onChange(set({ _type: "slug", current: next }, ["slug"]));
-    }
-  }, [displayName, slug, readOnly, onChange]);
+    const source = `${countryRef}:${base}`;
+    if (slug?.current && lastAutoSlugSource.current === source) return;
+
+    let cancelled = false;
+    const publishedId = documentId?.replace(/^drafts\./, "");
+    const ownIds = publishedId ? [publishedId, `drafts.${publishedId}`] : [];
+    client
+      .fetch<string[]>(
+        `*[_type == "profile" && country._ref == $countryId && !(_id in $ownIds)].slug.current`,
+        { countryId: countryRef, ownIds },
+      )
+      .then((slugs) => {
+        if (cancelled) return;
+        const used = new Set(slugs.filter(Boolean));
+        let next = base;
+        for (let suffix = 2; used.has(next); suffix += 1) {
+          next = `${base}-${suffix}`;
+        }
+        lastAutoSlug.current = next;
+        lastAutoSlugSource.current = source;
+        if (slug?.current !== next) {
+          onChange(set({ _type: "slug", current: next }, ["slug"]));
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        lastAutoSlug.current = base;
+        lastAutoSlugSource.current = source;
+        if (slug?.current !== base) {
+          onChange(set({ _type: "slug", current: base }, ["slug"]));
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [client, countryRef, displayName, documentId, slug, readOnly, onChange]);
 
   useEffect(() => {
     if (readOnly || !body?.en?.trim()) return;
