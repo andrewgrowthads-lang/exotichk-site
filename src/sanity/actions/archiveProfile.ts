@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { type DocumentActionComponent, useClient, useDocumentOperation } from "sanity";
+import { scheduleCatalogRevalidate } from "@/sanity/lib/requestRevalidate";
+import { resolveStudioToken } from "@/sanity/lib/studioToken";
 
 type ProfileStatus = "active" | "archived";
 
@@ -50,6 +52,8 @@ export function ArchiveRestoreProfileAction(
         patch.execute([{ set: { status: nextStatus } }]);
         await waitForDraftStatus(client, props.id, nextStatus);
         publish.execute();
+        const token = await resolveStudioToken(client);
+        if (token) scheduleCatalogRevalidate(token);
       } finally {
         setBusy(false);
         props.onComplete();

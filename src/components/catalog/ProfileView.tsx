@@ -2,7 +2,7 @@ import type { LocaleId } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/dictionaries";
 import { resolveCurrency } from "@/lib/countryPresets";
 import { formatPrice } from "@/lib/formatPrice";
-import { localizeAttribute, localizeLanguage, localizeNationality, pickLocalizedText } from "@/lib/localize";
+import { localizeAttribute, localizeLanguage, localizeNationality, pickLocalizedText, resolveProfileDescriptionText } from "@/lib/localize";
 import { absoluteUrl, countryPath, districtPath, homePath, profilePath } from "@/lib/urls";
 import { hasDirectContact } from "@/lib/contact";
 import type { ProfileContext } from "@/lib/analytics";
@@ -154,12 +154,12 @@ export function ProfileView({
             />
           </div>
 
-          <p className="mt-6 text-[15px] leading-relaxed text-[var(--foreground)]">
-            {pickLocalizedText(profile.summary, locale)}
-          </p>
-          {profile.body && (
-            <p className="mt-3 text-[15px] leading-relaxed text-[var(--muted)]">{pickLocalizedText(profile.body, locale)}</p>
-          )}
+          {(() => {
+            const descriptionText = resolveProfileDescriptionText(profile, locale);
+            return descriptionText ? (
+              <p className="mt-6 text-[15px] leading-relaxed text-[var(--foreground)]">{descriptionText}</p>
+            ) : null;
+          })()}
         </div>
       </div>
 

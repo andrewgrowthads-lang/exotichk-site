@@ -6,6 +6,7 @@ import { districtExpandedLabel, districtNavLabel } from "./districtLabels";
 import { formatPrice, isCurrencyCode } from "./formatPrice";
 import { homeSeoDescription, homeSeoTitle, profileSeoTitle } from "./seo";
 import { generateInternalId } from "../sanity/lib/generateInternalId";
+import { resolveProfileDescriptionText } from "./localize";
 
 const HK_LEGACY = {
   whatsappUrl: "https://wa.me/66955233905",
@@ -133,4 +134,34 @@ test("profile titles name the district only when the profile has one", () => {
   assert.equal(profileSeoTitle({ ...base, locale: "zh-Hant-HK", country: "香港", district: "尖沙咀" }), "Mia－尖沙咀，香港｜ExoticHK");
   assert.equal(profileSeoTitle({ ...base, locale: "en", country: "Singapore" }), "Mia in Singapore | ExoticHK");
   assert.equal(profileSeoTitle({ ...base, locale: "zh-Hant-HK", country: "新加坡" }), "Mia－新加坡｜ExoticHK");
+});
+
+test("profile description renders body once without duplicating auto-derived summary", () => {
+  const fullBody =
+    "Greetings! I’m exotic beauty with a warm heart and magnetic energy. I am known for my fascinating stories and ability to connect with people on a deeper level. I can be your perfect escape, offering closeness and companionship.";
+  const autoSummary =
+    "I’m exotic beauty with a warm heart and magnetic energy. I am known for my fascinating stories and ability to connect with people on a deeper level.";
+  assert.equal(
+    resolveProfileDescriptionText(
+      { displayName: "Alena", summary: { en: autoSummary }, body: { en: fullBody } },
+      "en",
+    ),
+    fullBody,
+  );
+  // Profile without body where summary was auto-filled with displayName renders no duplicate name paragraph
+  assert.equal(
+    resolveProfileDescriptionText(
+      { displayName: "Diana", summary: { en: "Diana" }, body: undefined },
+      "en",
+    ),
+    "",
+  );
+  // Legacy profile with custom summary and no body still renders its summary
+  assert.equal(
+    resolveProfileDescriptionText(
+      { displayName: "Mia", summary: { en: "Warm and charming companion in Central." }, body: undefined },
+      "en",
+    ),
+    "Warm and charming companion in Central.",
+  );
 });

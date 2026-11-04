@@ -1,5 +1,5 @@
-import { locales, type LocaleId } from "@/i18n/config";
-import type { LocalizedText } from "@/types/content";
+import { locales, type LocaleId } from "../i18n/config";
+import type { LocalizedText } from "../types/content";
 
 /**
  * Reads a `LocalizedText` field for the given locale, falling back to the
@@ -77,4 +77,33 @@ const ATTRIBUTE_TRANSLATIONS_ZH: Record<string, string> = {
 
 export function localizeAttribute(value: string, locale: LocaleId): string {
   return localizeFromMap(ATTRIBUTE_TRANSLATIONS_ZH, value, locale);
+}
+
+/**
+ * Resolves the single user-visible description text for a profile page.
+ *
+ * In Sanity Studio, `summary` is a hidden field automatically derived from
+ * the opening sentences of `body` (or set to `displayName` when `body` is
+ * empty) for `profileVisibility` and SEO `<meta name="description">`.
+ * Rendering both `summary` and `body` on the profile page duplicates the
+ * opening sentences back-to-back. We therefore render `body` when present,
+ * fall back to `summary` only for legacy profiles that have a non-name
+ * `summary` without `body`, and render nothing when no description exists.
+ */
+export function resolveProfileDescriptionText(
+  profile: { displayName: string; summary?: LocalizedText; body?: LocalizedText },
+  locale: LocaleId,
+): string {
+  const bodyText = pickLocalizedText(profile.body, locale).trim();
+  if (bodyText) return bodyText;
+  const summaryText = pickLocalizedText(profile.summary, locale).trim();
+  const nameText = (profile.displayName ?? "").trim();
+  if (
+    summaryText &&
+    summaryText.toLowerCase() !== nameText.toLowerCase() &&
+    summaryText.toLowerCase() !== "profile"
+  ) {
+    return summaryText;
+  }
+  return "";
 }
